@@ -3,7 +3,10 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import { ErrorMiddleware } from "./middleware/error";
 import dotenv from "dotenv";
+import swaggerUi from "swagger-ui-express";
+const swaggerDocument = require("./swagger-output.json");
 import userRouter from "./routes/user.route";
+import authRouter from "./routes/auth.route";
 
 export const app = express();
 //config
@@ -26,8 +29,13 @@ app.use(
   })
 );
 
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use("/docs.json", (req, res) => {
+  res.json(swaggerDocument);
+});
+
 //routes
-app.use("/api/v1", userRouter);
+app.use("/api/v1", authRouter);
 
 //testing route
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

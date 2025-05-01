@@ -8,7 +8,9 @@ import cloudinary from "cloudinary";
 import dotenv from "dotenv";
 dotenv.config();
 
-// Register user
+// @desc    Register a new user
+// @route   POST /api/v1/register
+// @access  Public
 export const registerUser = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -66,6 +68,9 @@ export const registerUser = catchAsyncError(
   }
 );
 
+// @desc    Login user
+// @route   POST /api/v1/login
+// @access  Public
 export const loginUser = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -91,6 +96,9 @@ export const loginUser = catchAsyncError(
   }
 );
 
+// @desc    Logout user
+// @route   POST /api/v1/logout
+// @access  Public
 export const logoutUser = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {

@@ -8,11 +8,8 @@ export type CreateUserParams = {
   };
   
   export type UpdateUserParams = {
-    username: string;
     name: string;
-    bio: string;
     avatar?: string;
-    isOnboarding?: boolean;
   };
   
   export type GetUsersParams = {

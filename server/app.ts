@@ -35,7 +35,7 @@ app.use("/docs.json", (req, res) => {
 });
 
 //routes
-app.use("/api/v1", authRouter);
+app.use("/api/v1", authRouter, userRouter);
 
 //testing route
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

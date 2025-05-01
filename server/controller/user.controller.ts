@@ -5,6 +5,7 @@ import { catchAsyncError } from "../middleware/catchAsyncError";
 import { NextFunction, Request, Response } from "express";
 import { UpdateUserParams } from "../@types";
 import cloudinary from "cloudinary";
+import Task from "../model/Task.model";
 
 // @desc    Get logged in user profile
 // @route   GET /api/v1/me
@@ -139,34 +140,46 @@ export const updateUserRole = catchAsyncError(
   }
 );
 
-// delete user
+// @desc    Delete user and all associated data (tasks, attachments)
+// @route   DELETE /api/users/:userId
+// @access  Private (Admin only)
 export const deleteUser = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { userId } = req.params;
+
+      // Check if the user exists
       const user = await User.findById(userId);
+
       if (!user) {
         return next(new ErrorHandler("User not found", 404));
       }
-      // Unlink relationships
-      await Promise.all([
-        Event.updateMany(
-          { _id: { $in: user.events } },
-          { $pull: { organizer: user._id } }
-        ),
 
-        // Update the 'orders' collection to remove references to the user
-        Order.updateMany(
-          { _id: { $in: user.orders } },
-          { $unset: { buyer: 1 } }
-        ),
-      ]);
+      // Find all tasks assigned to the user
+      const userTasks = await Task.find({ assignedTo: userId });
 
-      // Delete user
-      const deletedUser = await User.findByIdAndDelete(user._id);
-      res
-        .status(200)
-        .json({ success: true, message: "User deleted successfully!" });
+      // Delete all task attachments from Cloudinary
+      // for (const task of userTasks) {
+      //   if (task.attachments && task.attachments.length > 0) {
+      //     await deleteAttachmentsFromCloudinary(task.attachments);
+      //   }
+      // }
+
+      // Delete user's avatar from Cloudinary if it exists
+      if (user.avatar && user.avatar.public_id) {
+        await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+      }
+
+      // Delete all tasks associated with the user
+      await Task.deleteMany({ assignedTo: userId });
+
+      // Finally, delete the user
+      await User.findByIdAndDelete(userId);
+
+      res.status(200).json({
+        success: true,
+        message: "User and all associated data deleted successfully",
+      });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }

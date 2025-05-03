@@ -42,7 +42,7 @@ const uploadAttachmentsToCloudinary = async (
 };
 
 // Helper function to delete attachments from Cloudinary
-const deleteAttachmentsFromCloudinary = async (
+export const deleteAttachmentsFromCloudinary = async (
   attachments: IAttachment[]
 ): Promise<void> => {
   if (!attachments || attachments.length === 0) return;
@@ -324,7 +324,7 @@ export const updateTaskAttachments = catchAsyncError(
 );
 
 // @desc    Get a task with its attachments
-// @route   GET /api/tasks/:id
+// @route   GET /api/task/:id
 // @access  Private
 export const getTask = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {

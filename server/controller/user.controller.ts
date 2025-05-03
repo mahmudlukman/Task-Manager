@@ -6,6 +6,7 @@ import { NextFunction, Request, Response } from "express";
 import { UpdateUserParams } from "../@types";
 import cloudinary from "cloudinary";
 import Task from "../model/Task.model";
+import { deleteAttachmentsFromCloudinary } from "./task.controller";
 
 // @desc    Get logged in user profile
 // @route   GET /api/v1/me
@@ -159,11 +160,11 @@ export const deleteUser = catchAsyncError(
       const userTasks = await Task.find({ assignedTo: userId });
 
       // Delete all task attachments from Cloudinary
-      // for (const task of userTasks) {
-      //   if (task.attachments && task.attachments.length > 0) {
-      //     await deleteAttachmentsFromCloudinary(task.attachments);
-      //   }
-      // }
+      for (const task of userTasks) {
+        if (task.attachments && task.attachments.length > 0) {
+          await deleteAttachmentsFromCloudinary(task.attachments);
+        }
+      }
 
       // Delete user's avatar from Cloudinary if it exists
       if (user.avatar && user.avatar.public_id) {

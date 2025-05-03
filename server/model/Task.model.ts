@@ -32,7 +32,7 @@ export interface ITask extends Document {
   title: string;
   description: string;
   priority: string;
-  assignedTo: { type: Schema.Types.ObjectId; ref: "User" };
+  assignedTo: [{ type: Schema.Types.ObjectId; ref: "User" }];
   status: string;
   dueDate: Date;
   todoChecklist: ITodo[];
@@ -50,7 +50,7 @@ const TaskSchema: Schema<ITask> = new mongoose.Schema(
       enum: ["Low", "Medium", "High"],
       default: "Medium",
     },
-    assignedTo: { type: Schema.Types.ObjectId, ref: "User" },
+    assignedTo: [{ type: Schema.Types.ObjectId, ref: "User" }],
     status: {
       type: String,
       enum: ["Pending", "In Progress", "Completed"],

@@ -1,4 +1,7 @@
-import swaggerAutogen from 'swagger-autogen';
+// import swaggerAutogen from 'swagger-autogen';
+const swaggerAutogen = require('swagger-autogen')()
+
+
 
 const doc = {
   info: {
@@ -11,6 +14,6 @@ const doc = {
 };
 
 const outputFile = './swagger-output.json';
-const endpointsFiles = ['./dist/routes/auth.route.js'];
+const endpointsFiles = ['./dist/routes/auth.route.js', './dist/routes/task.route.js', './dist/routes/user.route.js'];
 
 swaggerAutogen(outputFile, endpointsFiles, doc);

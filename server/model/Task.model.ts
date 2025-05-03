@@ -32,7 +32,9 @@ export interface ITask extends Document {
   title: string;
   description: string;
   priority: string;
-  assignedTo: [{ type: Schema.Types.ObjectId; ref: "User" }];
+  assignedTo: [{
+      [x: string]: any; type: Schema.Types.ObjectId; ref: "User" 
+}];
   status: string;
   dueDate: Date;
   todoChecklist: ITodo[];

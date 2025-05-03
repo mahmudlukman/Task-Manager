@@ -8,6 +8,7 @@ const swaggerDocument = require("./swagger-output.json");
 import userRouter from "./routes/user.route";
 import authRouter from "./routes/auth.route";
 import taskRouter from "./routes/task.route";
+import reportRouter from "./routes/report.route";
 
 export const app = express();
 //config
@@ -36,7 +37,7 @@ app.use("/docs.json", (req, res) => {
 });
 
 //routes
-app.use("/api/v1", authRouter, userRouter, taskRouter);
+app.use("/api/v1", authRouter, userRouter, taskRouter, reportRouter);
 
 //testing route
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

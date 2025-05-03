@@ -332,7 +332,7 @@
         }
       }
     },
-    "/tasks/{id}/attachments/{attachmentId}": {
+    "/task/{id}/attachments/{attachmentId}": {
       "delete": {
         "description": "",
         "parameters": [
@@ -347,21 +347,6 @@
             "in": "path",
             "required": true,
             "type": "string"
-          },
-          {
-            "name": "body",
-            "in": "body",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "fileAttachments": {
-                  "example": "any"
-                },
-                "removeAttachments": {
-                  "example": "any"
-                }
-              }
-            }
           }
         ],
         "responses": {
@@ -497,6 +482,32 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/export/tasks": {
+      "get": {
+        "description": "",
+        "produces": [
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ],
+        "responses": {
+          "default": {
+            "description": ""
+          }
+        }
+      }
+    },
+    "/export/users": {
+      "get": {
+        "description": "",
+        "produces": [
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ],
+        "responses": {
+          "default": {
+            "description": ""
           }
         }
       }

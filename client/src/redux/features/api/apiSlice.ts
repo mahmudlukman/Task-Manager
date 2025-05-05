@@ -5,7 +5,7 @@ export const apiSlice = createApi({
   tagTypes: ['User', 'Task', 'Report'],
   reducerPath: 'api',
   baseQuery: fetchBaseQuery({
-    baseUrl: import.meta.env.REACT_PUBLIC_SERVER_URI,
+    baseUrl: import.meta.env.VITE_API_URL,
   }),
   endpoints: (builder) => ({
     loadUser: builder.query({

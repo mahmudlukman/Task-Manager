@@ -6,7 +6,13 @@ type RegistrationResponse = {
   activationToken: string;
 };
 
-type RegistrationData = object;
+type RegistrationData = {
+  name: string;
+  email: string;
+  password: string;
+  avatar?: string;
+  adminInviteToken?: string;
+};
 
 export const authApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -54,7 +60,7 @@ export const authApi = apiSlice.injectEndpoints({
         }
       },
     }),
-    logOut: builder.query({
+    logOut: builder.mutation({
       query: () => ({
         url: "logout",
         method: "GET",
@@ -72,5 +78,5 @@ export const authApi = apiSlice.injectEndpoints({
   }),
 });
 
-export const { useLogOutQuery, useLoginMutation, useRegisterMutation } =
+export const { useLogOutMutation, useLoginMutation, useRegisterMutation } =
   authApi;

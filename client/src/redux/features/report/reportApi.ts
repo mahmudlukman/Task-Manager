@@ -14,19 +14,16 @@ export const reportApi = apiSlice.injectEndpoints({
         { type: "Report", id: "LIST" },
       ],
     }),
-    exportTasksReport: builder.query({
+    exportTasksReport: builder.mutation<Blob, void>({
       query: () => ({
         url: "export/users",
         method: "GET",
+        responseType: "blob",
         credentials: "include" as const,
       }),
-      providesTags: (result) => [
-        ...getUsersFromResult(result),
-        { type: "Report", id: "LIST" },
-      ],
     }),
   }),
 });
 
-export const { useExportUsersReportQuery, useExportTasksReportQuery } =
+export const { useExportUsersReportQuery, useExportTasksReportMutation } =
   reportApi;

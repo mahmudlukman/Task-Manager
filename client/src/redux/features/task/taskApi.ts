@@ -1,5 +1,12 @@
 import { apiSlice } from "../api/apiSlice";
-import { getUsersFromResult } from "../../helper";
+// import { getUsersFromResult } from "../../helper";
+import {
+  AdminDashboardData,
+  GetAllTasksResponse,
+  Task,
+  Todo,
+  // UserDashboardData,
+} from "../../../@types";
 
 export const taskApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
@@ -15,34 +22,53 @@ export const taskApi = apiSlice.injectEndpoints({
         { type: "Task", id: "LIST" },
       ],
     }),
-    getAllTasks: builder.query({
-      query: () => ({
+    getAllTasks: builder.query<GetAllTasksResponse, { status?: string }>({
+      query: ({ status }) => ({
         url: "tasks",
         method: "GET",
+        params: status ? { status } : undefined,
         credentials: "include" as const,
       }),
-      providesTags: (result) => [
-        ...getUsersFromResult(result),
-        { type: "Task", id: "LIST" },
-      ],
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.tasks.map(({ _id }) => ({
+                type: "Task" as const,
+                id: _id,
+              })),
+              { type: "Task", id: "LIST" },
+              // Add user tags for assignedTo
+              ...result.tasks.flatMap((task) =>
+                task.assignedTo.map((user) => ({
+                  type: "User" as const,
+                  id: user._id,
+                }))
+              ),
+            ]
+          : [{ type: "Task", id: "LIST" }],
     }),
-    getTask: builder.query({
+    getTask: builder.query<Task, { id: string }>({
       query: ({ id }) => ({
         url: `task/${id}`,
         method: "GET",
         credentials: "include" as const,
       }),
-      providesTags: (result) => [
-        ...getUsersFromResult(result),
-        { type: "Task", id: "LIST" },
-      ],
+      providesTags: (result) =>
+        result
+          ? [
+              { type: "Task", id: result._id },
+              ...result.assignedTo.map((user) => ({
+                type: "User" as const,
+                id: user._id,
+              })),
+            ]
+          : [{ type: "Task", id: "LIST" }],
     }),
     updateTask: builder.mutation({
       query: ({ id, data }) => ({
         url: `update-task/${id}`,
         method: "PUT",
         body: data,
-        formData: true,
         credentials: "include" as const,
       }),
       invalidatesTags: (arg) => [
@@ -55,7 +81,6 @@ export const taskApi = apiSlice.injectEndpoints({
         url: `status/${id}`,
         method: "PUT",
         body: data,
-        formData: true,
         credentials: "include" as const,
       }),
       invalidatesTags: (arg) => [
@@ -63,16 +88,18 @@ export const taskApi = apiSlice.injectEndpoints({
         { type: "Task", id: "LIST" },
       ],
     }),
-    updateTaskChecklist: builder.mutation({
+    updateTaskChecklist: builder.mutation<
+      Task,
+      { id: string; data: { todoChecklist: Todo[] } }
+    >({
       query: ({ id, data }) => ({
         url: `todo/${id}`,
         method: "PUT",
         body: data,
-        formData: true,
         credentials: "include" as const,
       }),
-      invalidatesTags: (arg) => [
-        { type: "Task", id: arg.data.id },
+      invalidatesTags: (result) => [
+        { type: "Task", id: result?._id },
         { type: "Task", id: "LIST" },
       ],
     }),
@@ -111,27 +138,55 @@ export const taskApi = apiSlice.injectEndpoints({
         { type: "Task", id: "LIST" },
       ],
     }),
-    getDashboardData: builder.query({
+    getDashboardData: builder.query<AdminDashboardData, void>({
       query: () => ({
         url: "dashboard-data",
         method: "GET",
         credentials: "include" as const,
       }),
-      providesTags: (result) => [
-        ...getUsersFromResult(result),
-        { type: "Task", id: "LIST" },
-      ],
+      providesTags: (result) =>
+        result && result.recentTasks && Array.isArray(result.recentTasks)
+          ? [
+              { type: "Task", id: "LIST" },
+              ...result.recentTasks.map((task: Task) => ({
+                type: "Task" as const,
+                id: task._id,
+              })),
+              ...result.recentTasks.flatMap((task: Task) =>
+                task.assignedTo && Array.isArray(task.assignedTo)
+                  ? task.assignedTo.map((user) => ({
+                      type: "User" as const,
+                      id: user._id,
+                    }))
+                  : []
+              ),
+            ]
+          : [{ type: "Task", id: "LIST" }],
     }),
-    getUserDashboardData: builder.query({
+    getUserDashboardData: builder.query<AdminDashboardData, void>({
       query: () => ({
         url: "user-dashboard-data",
         method: "GET",
         credentials: "include" as const,
       }),
-      providesTags: (result) => [
-        ...getUsersFromResult(result),
-        { type: "Task", id: "LIST" },
-      ],
+      providesTags: (result) =>
+        result && result.recentTasks && Array.isArray(result.recentTasks)
+          ? [
+              { type: "Task", id: "LIST" },
+              ...result.recentTasks.map((task: Task) => ({
+                type: "Task" as const,
+                id: task._id,
+              })),
+              ...result.recentTasks.flatMap((task: Task) =>
+                task.assignedTo && Array.isArray(task.assignedTo)
+                  ? task.assignedTo.map((user) => ({
+                      type: "User" as const,
+                      id: user._id,
+                    }))
+                  : []
+              ),
+            ]
+          : [{ type: "Task", id: "LIST" }],
     }),
   }),
 });

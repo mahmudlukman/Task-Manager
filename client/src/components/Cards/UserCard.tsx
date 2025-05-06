@@ -16,7 +16,7 @@ const UserCard = ({ userInfo }: { userInfo: UserInfo }) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <img
-            src={userInfo?.avatar?.url}
+            src={userInfo?.avatar?.url || userInfo?.name?.charAt(0).toUpperCase()}
             alt={`Avatar`}
             className="w-12 h-12 rounded-full border-2 border-white"
           />

@@ -136,7 +136,7 @@ const TaskCard: React.FC<TaskCardProps> = ({
         </div>
 
         <div className="flex items-center justify-between mt-3">
-          <AvatarGroup avatars={(assignedTo || []).map(user => user.avatar?.url || '')} />
+          <AvatarGroup avatars={(assignedTo || []).map(user => user.avatar?.url || user?.name?.charAt(0).toUpperCase())} />
 
           {attachmentCount > 0 && (
             <div className="flex items-center gap-2 bg-blue-50 px-2.5 py-1.5 rounded-lg">

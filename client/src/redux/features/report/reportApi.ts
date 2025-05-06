@@ -1,29 +1,25 @@
 import { apiSlice } from "../api/apiSlice";
-import { getUsersFromResult } from "../../helper";
 
 export const reportApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
-    exportUsersReport: builder.query({
+    exportUsersReport: builder.mutation<Blob, void>({
       query: () => ({
-        url: "export/tasks",
+        url: "/export/users",
         method: "GET",
         credentials: "include" as const,
+        responseHandler: (response) => response.blob(),
       }),
-      providesTags: (result) => [
-        ...getUsersFromResult(result),
-        { type: "Report", id: "LIST" },
-      ],
     }),
     exportTasksReport: builder.mutation<Blob, void>({
       query: () => ({
-        url: "export/users",
+        url: "/export/tasks",
         method: "GET",
-        responseType: "blob",
         credentials: "include" as const,
+        responseHandler: (response) => response.blob(), // Handle binary response
       }),
     }),
   }),
 });
 
-export const { useExportUsersReportQuery, useExportTasksReportMutation } =
+export const { useExportUsersReportMutation, useExportTasksReportMutation } =
   reportApi;

@@ -8,6 +8,7 @@ import { useGetAllTasksQuery } from "../../redux/features/task/taskApi";
 import { toast } from "react-hot-toast";
 import { useExportTasksReportMutation } from "../../redux/features/report/reportApi";
 import { StatusTab, Task } from "../../@types";
+import { downloadBlob } from "../../utils/helper";
 
 const ManageTasks = () => {
   const navigate = useNavigate();
@@ -18,10 +19,13 @@ const ManageTasks = () => {
     data: tasksData,
     isLoading,
     isError,
-  } = useGetAllTasksQuery({ status: filterStatus === "All" ? undefined : filterStatus });
+  } = useGetAllTasksQuery({
+    status: filterStatus === "All" ? undefined : filterStatus,
+  });
 
   // Download report mutation
-  const [exportTasks, { isLoading: isExporting }] = useExportTasksReportMutation();
+  const [exportTasksReport, { isLoading: isExporting }] =
+    useExportTasksReportMutation();
 
   // Prepare tabs from statusSummary
   const tabs: StatusTab[] = React.useMemo(() => {
@@ -48,15 +52,11 @@ const ManageTasks = () => {
   // Download task report
   const handleDownloadReport = async () => {
     try {
-      const response = await exportTasks().unwrap();
-      const url = window.URL.createObjectURL(new Blob([response]));
-      const link = document.createElement("a");
-      link.href = url;
-      link.setAttribute("download", "task_details.xlsx");
-      document.body.appendChild(link);
-      link.click();
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      const blob = await exportTasksReport().unwrap();
+      downloadBlob(
+        blob,
+        `tasks_report_${new Date().toISOString().split("T")[0]}.xlsx`
+      );
     } catch (error) {
       console.error("Error downloading report:", error);
       toast.error("Failed to download report. Please try again.");
@@ -100,11 +100,7 @@ const ManageTasks = () => {
 
         {isLoading && <p className="text-gray-500 mt-4">Loading tasks...</p>}
 
-        {isError && (
-          <p className="text-red-500 mt-4">
-            Error fetching tasks:
-          </p>
-        )}
+        {isError && <p className="text-red-500 mt-4">Error fetching tasks:</p>}
 
         {!isLoading && !isError && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">

@@ -50,9 +50,8 @@ export const exportTasksReport = catchAsyncError(
         'attachment; filename="tasks_report.xlsx"'
       );
 
-      return workbook.xlsx.write(res).then(() => {
-        res.end();
-      });
+      await workbook.xlsx.write(res);
+      res.end();
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }

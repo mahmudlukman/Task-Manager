@@ -74,7 +74,7 @@ export const getUsers = catchAsyncError(
         })
       );
 
-      res.status(200).json({ success: true, usersWithTaskCounts });
+      res.status(200).json({ success: true, users, usersWithTaskCounts });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }

@@ -21,7 +21,8 @@ interface Todo {
 interface Attachment {
   public_id: string;
   url: string;
-  filename: string;
+  name: string;
+  fileName: string;
   fileType: string;
   size?: number;
 }
@@ -29,6 +30,7 @@ interface Attachment {
 interface User {
   _id: string;
   name: string;
+  email: string;
   avatar?: { public_id: string; url: string };
 }
 

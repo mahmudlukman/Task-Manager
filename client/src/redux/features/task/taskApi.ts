@@ -17,10 +17,12 @@ export const taskApi = apiSlice.injectEndpoints({
         body: data,
         credentials: "include" as const,
       }),
-      invalidatesTags: (arg) => [
-        { type: "Task", id: arg.data.id },
-        { type: "Task", id: "LIST" },
-      ],
+      invalidatesTags: (result) => {
+        return [
+          { type: "Task", id: result?.task?._id },
+          { type: "Task", id: "LIST" },
+        ];
+      },
     }),
     getAllTasks: builder.query<GetAllTasksResponse, { status?: string }>({
       query: ({ status }) => ({

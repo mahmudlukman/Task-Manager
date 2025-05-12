@@ -80,7 +80,7 @@ const router = createBrowserRouter([
         element: <MyTasks />
       },
       {
-        path: "task-details/:id",
+        path: "task/:id",
         element: <ViewTaskDetails />
       }
     ]

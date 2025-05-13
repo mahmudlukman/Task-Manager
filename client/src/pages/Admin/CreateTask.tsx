@@ -33,7 +33,7 @@ const CreateTask = () => {
     todoChecklist: [] as string[],
     attachments: [] as Attachment[],
   });
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]); // Store File objects
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
 
   // RTK Query hooks
@@ -45,7 +45,10 @@ const CreateTask = () => {
     { skip: !taskId }
   );
 
-  const handleValueChange = (key: string, value: string | string[] | Attachment[] | null) => {
+  const handleValueChange = (
+    key: string,
+    value: string | string[] | Attachment[] | null
+  ) => {
     setTaskData((prevData) => ({ ...prevData, [key]: value }));
     if (key === "attachments") {
       console.log("Attachments updated:", value);
@@ -94,12 +97,12 @@ const CreateTask = () => {
 
       const payload = {
         ...taskData,
-        dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : undefined,
+        dueDate: taskData.dueDate
+          ? new Date(taskData.dueDate).toISOString()
+          : undefined,
         todoChecklist: todolist,
         fileAttachments,
       };
-
-      console.log("Create task payload:", payload);
 
       await createTask(payload).unwrap();
       toast.success("Task Created Successfully");
@@ -113,43 +116,69 @@ const CreateTask = () => {
   // Update Task
   const handleUpdateTask = async () => {
     try {
+      if (
+        !taskId ||
+        typeof taskId !== "string" ||
+        !/^[0-9a-fA-F]{24}$/.test(taskId)
+      ) {
+        console.error("Invalid taskId:", taskId);
+        toast.error("Invalid task ID. Please select a valid task.");
+        return;
+      }
+
       const todolist = taskData.todoChecklist.map((item) => {
         const prevTodoChecklist = taskInfo?.todoChecklist || [];
-        const matchedTask = prevTodoChecklist.find((task) => task.text === item);
+        const matchedTask = prevTodoChecklist.find(
+          (task) => task.text === item
+        );
         return {
           text: item,
           completed: matchedTask ? matchedTask.completed : false,
         };
       });
 
-      // Convert pending files to base64
+      const validFiles = pendingFiles.filter((file) => {
+        if (file.size > 5 * 1024 * 1024) {
+          toast.error(`${file.name} exceeds 5MB limit`);
+          return false;
+        }
+        return true;
+      });
+
       const fileAttachments = await Promise.all(
-        pendingFiles.map(async (file) => ({
-          name: file.name,
-          type: file.type,
-          data: await fileToBase64(file),
-        }))
+        validFiles.map(async (file) => {
+          const base64 = await fileToBase64(file);
+          return {
+            name: file.name,
+            type: file.type,
+            data: base64,
+          };
+        })
       );
 
-      // Identify attachments to remove (existing ones not in taskData.attachments)
-      const removeAttachments = taskInfo?.attachments
-        ?.filter(
-          (att) => !taskData.attachments.some((newAtt) => newAtt.public_id === att.public_id)
-        )
-        .map((att) => att.public_id) || [];
+      const removeAttachments =
+        taskInfo?.attachments
+          ?.filter(
+            (att) =>
+              !taskData.attachments.some(
+                (newAtt) => newAtt.public_id === att.public_id
+              )
+          )
+          .map((att) => att.public_id) || [];
 
       const payload = {
         ...taskData,
-        dueDate: taskData.dueDate ? new Date(taskData.dueDate).toISOString() : undefined,
+        dueDate: taskData.dueDate
+          ? new Date(taskData.dueDate).toISOString()
+          : undefined,
         todoChecklist: todolist,
         fileAttachments,
         removeAttachments,
       };
 
-      console.log("Update task payload:", payload);
-
       await updateTask({ id: taskId, data: payload }).unwrap();
       toast.success("Task Updated Successfully");
+      setPendingFiles([]); // Clear pending files after success
     } catch (error) {
       console.error("Error updating task:", error);
       toast.error("Failed to update task. Please try again.");
@@ -201,29 +230,67 @@ const CreateTask = () => {
   };
 
   // Populate form with task data when editing
+  // useEffect(() => {
+  //   if (taskInfo) {
+  //     setTaskData({
+  //       title: taskInfo.title ?? "",
+  //       description: taskInfo.description ?? "",
+  //       priority: taskInfo.priority,
+  //       dueDate: taskInfo.dueDate
+  //         ? moment(taskInfo.dueDate).format("YYYY-MM-DD")
+  //         : null,
+  //       assignedTo: taskInfo.assignedTo?.map((user) => user._id) || [],
+  //       todoChecklist: taskInfo.todoChecklist?.map((item) => item.text) || [],
+  //       attachments:
+  //         taskInfo.attachments?.map((att) => ({
+  //           public_id: att.public_id,
+  //           url: att.url,
+  //           filename: att.filename,
+  //           fileType: att.fileType,
+  //           size: att.size,
+  //         })) || [],
+  //     });
+  //     setPendingFiles([]); // Clear pending files for edit mode
+  //   }
+  // }, [taskInfo]);
   useEffect(() => {
-    if (taskInfo) {
-      setTaskData({
-        title: taskInfo.title ?? "",
-        description: taskInfo.description ?? "",
-        priority: taskInfo.priority,
-        dueDate: taskInfo.dueDate
-          ? moment(taskInfo.dueDate).format("YYYY-MM-DD")
-          : null,
-        assignedTo: taskInfo.assignedTo?.map((user) => user._id) || [],
-        todoChecklist: taskInfo.todoChecklist?.map((item) => item.text) || [],
-        attachments: taskInfo.attachments?.map((att) => ({
-          public_id: att.public_id,
-          url: att.url,
-          name: att.fileName,
-          fileName: att.fileName,
-          fileType: att.fileType,
-          size: att.size,
-        })) || [],
-      });
-      setPendingFiles([]); // Clear pending files for edit mode
-    }
-  }, [taskInfo]);
+  if (taskInfo) {
+    console.log("taskInfo:", taskInfo);
+    console.log("taskInfo.attachments:", taskInfo.attachments);
+    setTaskData({
+      title: taskInfo.title ?? "",
+      description: taskInfo.description ?? "",
+      priority: taskInfo.priority ?? "Low",
+      dueDate: taskInfo.dueDate
+        ? moment(taskInfo.dueDate).format("YYYY-MM-DD")
+        : null,
+      assignedTo: Array.isArray(taskInfo.assignedTo)
+        ? taskInfo.assignedTo.map((user) => user._id || "")
+        : [],
+      todoChecklist: Array.isArray(taskInfo.todoChecklist)
+        ? taskInfo.todoChecklist.map((item) => item.text || "")
+        : [],
+      attachments: Array.isArray(taskInfo.attachments)
+        ? taskInfo.attachments.map((att) => {
+            const filename =
+              att.filename ||
+              (att.url ? (att.url.split("/").pop()?.split("?")[0] || "Unknown") : "Unknown") ||
+              "Unknown";
+            const cleanPublicId = att.public_id.replace(/^task-attachments\//, "");
+            return {
+              public_id: cleanPublicId,
+              url: att.url || "",
+              filename: filename,
+              fileType: att.fileType || "unknown",
+              size: att.size || 0,
+            };
+          })
+        : [],
+    });
+    setPendingFiles([]);
+    console.log("taskData updated:", taskData);
+  }
+}, [taskInfo]);
 
   const [openDeleteAlert, setOpenDeleteAlert] = useState(false);
 
@@ -329,7 +396,8 @@ const CreateTask = () => {
               <TodoListInput
                 todoList={taskData.todoChecklist}
                 setTodoList={(value) =>
-                  handleValueChange("todoChecklist",
+                  handleValueChange(
+                    "todoChecklist",
                     typeof value === "function"
                       ? value(taskData.todoChecklist)
                       : value
@@ -346,8 +414,9 @@ const CreateTask = () => {
               <AddAttachmentsInput
                 attachments={taskData.attachments}
                 setAttachments={(value) =>
-                  handleValueChange("attachments", 
-                    typeof value === "function" 
+                  handleValueChange(
+                    "attachments",
+                    typeof value === "function"
                       ? value(taskData.attachments)
                       : value
                   )
@@ -370,7 +439,9 @@ const CreateTask = () => {
               <button
                 className="add-btn"
                 onClick={handleSubmit}
-                disabled={isCreating || isUpdating || isFetchingTask || isDeleting}
+                disabled={
+                  isCreating || isUpdating || isFetchingTask || isDeleting
+                }
               >
                 {taskId ? "UPDATE TASK" : "CREATE TASK"}
               </button>

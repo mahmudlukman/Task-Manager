@@ -21,8 +21,7 @@ interface Todo {
 interface Attachment {
   public_id: string;
   url: string;
-  name: string;
-  fileName: string;
+  filename: string;
   fileType: string;
   size?: number;
 }
@@ -35,6 +34,7 @@ interface User {
 }
 
 interface Task {
+  updatedAt: string;
   _id: string;
   title: string;
   description?: string;

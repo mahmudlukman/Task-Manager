@@ -363,7 +363,9 @@ export const deleteTaskAttachment = catchAsyncError(
 
       // Find the attachment
       const attachmentToRemove = task.attachments?.find(
-        (att) => att.public_id === attachmentId
+        (att) =>
+          att.public_id === attachmentId ||
+          att.public_id === `task-attachments/${attachmentId}`
       );
 
       if (!attachmentToRemove) {
@@ -375,7 +377,7 @@ export const deleteTaskAttachment = catchAsyncError(
 
       // Remove from the task's attachments array
       task.attachments = task.attachments?.filter(
-        (att) => att.public_id !== attachmentId
+        (att) => att.public_id !== attachmentToRemove.public_id
       );
 
       // Save the updated task

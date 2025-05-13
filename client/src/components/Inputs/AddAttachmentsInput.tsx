@@ -1,4 +1,4 @@
-import React, { Dispatch, SetStateAction, useState } from "react";
+import React, { useEffect } from "react";
 import { HiMiniPlus, HiOutlineTrash } from "react-icons/hi2";
 import { LuPaperclip } from "react-icons/lu";
 import { Attachment } from "../../@types";
@@ -7,37 +7,41 @@ import { useDeleteAttachmentMutation } from "../../redux/features/task/taskApi";
 
 interface AttachmentsInputProps {
   attachments: Attachment[];
-  setAttachments: (value: SetStateAction<Attachment[]>) => void;
+  setAttachments: (value: React.SetStateAction<Attachment[]>) => void;
   taskId?: string;
   pendingFiles: File[];
-  setPendingFiles: Dispatch<SetStateAction<File[]>>;
+  setPendingFiles: React.Dispatch<React.SetStateAction<File[]>>;
 }
 
 const AddAttachmentsInput = ({
   attachments,
   setAttachments,
   taskId,
+  setPendingFiles,
 }: AttachmentsInputProps) => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [pendingFiles, setPendingFiles] = useState<File[]>([]); // Store new files
   const [deleteAttachment, { isLoading: isDeleting }] =
     useDeleteAttachmentMutation();
 
   // Handle file selection
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+      console.warn("No files selected");
+      return;
+    }
 
-    const newAttachments: Attachment[] = Array.from(files).map((file) => ({
-      public_id: `temp_${Math.random().toString(36).substring(2)}`, // Temporary ID
-      url: URL.createObjectURL(file), // Temporary preview
-      name: file.name,
-      fileName: file.name,
+    const newFiles = Array.from(files);
+    console.log("Selected files:", newFiles);
+
+    const newAttachments: Attachment[] = newFiles.map((file, index) => ({
+      public_id: `temp_${Date.now()}_${index}`,
+      url: URL.createObjectURL(file),
+      filename: file.name,
       fileType: file.type || "unknown",
       size: file.size,
     }));
 
-    setPendingFiles((prev) => [...prev, ...Array.from(files)]);
+    setPendingFiles((prev) => [...prev, ...newFiles]);
     setAttachments((prev) => [...prev, ...newAttachments]);
     event.target.value = ""; // Reset input
   };
@@ -47,22 +51,43 @@ const AddAttachmentsInput = ({
     const attachment = attachments[index];
     try {
       if (taskId && !attachment.public_id.startsWith("temp_")) {
-        // Delete from backend for existing tasks
+        const cleanAttachmentId = attachment.public_id.replace(
+          /^task-attachments\//,
+          ""
+        );
         await deleteAttachment({
           id: taskId,
-          attachmentId: attachment.public_id,
+          attachmentId: cleanAttachmentId,
         }).unwrap();
         toast.success("Attachment deleted successfully");
       }
 
       // Remove from state
       setAttachments((prev) => prev.filter((_, idx) => idx !== index));
-      setPendingFiles((prev) => prev.filter((_, idx) => idx !== index));
+      if (attachment.public_id.startsWith("temp_")) {
+        // Remove corresponding file from pendingFiles
+        const fileIndex =
+          attachments
+            .slice(0, index + 1)
+            .filter((att) => att.public_id.startsWith("temp_")).length - 1;
+        setPendingFiles((prev) => prev.filter((_, idx) => idx !== fileIndex));
+      }
     } catch (error) {
       console.error("Delete attachment error:", error);
       toast.error("Failed to delete attachment");
     }
   };
+
+  // Clean up blob URLs
+  useEffect(() => {
+    return () => {
+      attachments.forEach((att) => {
+        if (att.url.startsWith("blob:")) {
+          URL.revokeObjectURL(att.url);
+        }
+      });
+    };
+  }, [attachments]);
 
   return (
     <div>
@@ -73,11 +98,11 @@ const AddAttachmentsInput = ({
         >
           <div className="flex-1 flex items-center gap-3">
             <LuPaperclip className="text-gray-400" />
-            <p className="text-xs text-black">{item.name}</p>
+            <p className="text-xs text-black">{item.filename}</p>
             {item.fileType.startsWith("image/") && (
               <img
                 src={item.url}
-                alt={item.name}
+                alt={item.filename}
                 className="w-6 h-6 object-cover rounded"
               />
             )}

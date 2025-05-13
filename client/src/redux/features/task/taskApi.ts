@@ -55,6 +55,27 @@ export const taskApi = apiSlice.injectEndpoints({
         method: "GET",
         credentials: "include" as const,
       }),
+      transformResponse: (response: { success: boolean; task: Task }) => {
+        const task = response.task || {};
+        return {
+          ...task,
+          _id: task._id || "",
+          title: task.title || "",
+          description: task.description || "",
+          priority: task.priority || "Low",
+          status: task.status || "Pending",
+          dueDate: task.dueDate || "",
+          assignedTo: Array.isArray(task.assignedTo) ? task.assignedTo : [],
+          todoChecklist: Array.isArray(task.todoChecklist)
+            ? task.todoChecklist
+            : [],
+          attachments: Array.isArray(task.attachments) ? task.attachments : [],
+          createdBy: task.createdBy || { _id: "", name: "", email: "" },
+          progress: task.progress || 0,
+          createdAt: task.createdAt || "",
+          updatedAt: task.updatedAt || "",
+        };
+      },
       providesTags: (result) =>
         result
           ? [
@@ -73,10 +94,12 @@ export const taskApi = apiSlice.injectEndpoints({
         body: data,
         credentials: "include" as const,
       }),
-      invalidatesTags: (arg) => [
-        { type: "Task", id: arg.data.id },
-        { type: "Task", id: "LIST" },
-      ],
+      invalidatesTags: (arg) => {
+        return [
+          { type: "Task", id: arg?.id || "UNKNOWN" },
+          { type: "Task", id: "LIST" },
+        ];
+      },
     }),
     updateTaskStatus: builder.mutation({
       query: ({ id, data }) => ({

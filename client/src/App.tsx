@@ -6,6 +6,7 @@ import ManageTasks from "./pages/Admin/ManageTasks";
 import CreateTask from "./pages/Admin/CreateTask";
 import ManageUsers from "./pages/Admin/ManageUsers";
 import UserDashboard from "./pages/User/UserDashboard";
+import UserProfile from "./pages/User/UserProfile";
 import MyTasks from "./pages/User/MyTasks";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails";
 import { Toaster } from "react-hot-toast";
@@ -69,7 +70,7 @@ const router = createBrowserRouter([
   // User Routes
   {
     path: "/user",
-    element: <PrivateRoute allowedRoles={["user"]} />,
+    element: <PrivateRoute allowedRoles={["member"]} />,
     children: [
       {
         path: "dashboard",
@@ -80,7 +81,11 @@ const router = createBrowserRouter([
         element: <MyTasks />
       },
       {
-        path: "task/:id",
+        path: "profile",
+        element: <UserProfile />
+      },
+      {
+        path: "task-details/:id",
         element: <ViewTaskDetails />
       }
     ]

@@ -44,12 +44,7 @@ const Login = () => {
     setError(null);
     
     try {
-      // Call the RTK Query login mutation
       await login({ email, password }).unwrap();
-      
-      // No need to manually navigate here as the useEffect will handle it
-      // after the Redux state is updated by the onQueryStarted callback
-      
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {
       if (err.data?.message) {

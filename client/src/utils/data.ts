@@ -4,6 +4,7 @@ import {
     LuClipboardCheck,
     LuSquarePlus,
     LuLogOut,
+    LuUser
   
   } from "react-icons/lu";
   
@@ -53,6 +54,12 @@ import {
       label: "My Tasks",
       icon: LuClipboardCheck,
       path: "/user/tasks",
+    },
+    {
+      id: "03",
+      label: "My Profile",
+      icon: LuUser,
+      path: "/user/profile",
     },
     {
       id: "05",

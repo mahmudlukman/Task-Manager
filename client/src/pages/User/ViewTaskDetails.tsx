@@ -3,10 +3,18 @@ import { useParams } from "react-router-dom";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import AvatarGroup from "../../components/AvatarGroup";
 import moment from "moment";
-import { LuSquareArrowOutUpRight } from "react-icons/lu";
-import { useGetTaskQuery, useUpdateTaskChecklistMutation } from "../../redux/features/task/taskApi";
+import {
+  LuSquareArrowOutUpRight,
+  LuDownload,
+  LuFileText,
+  LuImage,
+  LuFile,
+} from "react-icons/lu";
+import {
+  useGetTaskQuery,
+  useUpdateTaskChecklistMutation,
+} from "../../redux/features/task/taskApi";
 import type { Attachment, Todo, User } from "../../@types";
-
 
 const ViewTaskDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -15,7 +23,8 @@ const ViewTaskDetails = () => {
     isLoading,
     isError,
   } = useGetTaskQuery({ id: id! }, { skip: !id });
-  const [updateTaskChecklist, { isLoading: isUpdatingChecklist }] = useUpdateTaskChecklistMutation();
+  const [updateTaskChecklist, { isLoading: isUpdatingChecklist }] =
+    useUpdateTaskChecklistMutation();
 
   const getStatusTagColor = (status: string) => {
     switch (status) {
@@ -52,12 +61,45 @@ const ViewTaskDetails = () => {
     }
   };
 
-  // Handle attachment link click
-  const handleLinkClick = (link: string) => {
-    if (!/^https?:\/\//i.test(link)) {
-      link = "https://" + link; // Default to HTTPS
+  // Handle attachment view/download
+  const handleAttachment = (
+    attachment: Attachment,
+    action: "view" | "download"
+  ) => {
+    const url = attachment.url;
+
+    if (action === "view") {
+      // Open in new tab for viewing
+      window.open(url, "_blank");
+    } else {
+      // For download, we need to fetch the file as a blob to preserve the filename
+      fetch(url)
+        .then((response) => response.blob())
+        .then((blob) => {
+          // Create a blob URL for the file
+          const blobUrl = URL.createObjectURL(blob);
+
+          // Create a temporary link element to trigger the download
+          const link = document.createElement("a");
+          link.href = blobUrl;
+
+          // Use the original filename from the attachment object
+          const filename = attachment.filename || "download.file";
+          link.setAttribute("download", filename);
+
+          // Append to document, click, and clean up
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+
+          // Release the blob URL to free memory
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        })
+        .catch((error) => {
+          console.error("Error downloading file:", error);
+          alert("Failed to download file. Please try again.");
+        });
     }
-    window.open(link, "_blank");
   };
 
   return (
@@ -65,11 +107,7 @@ const ViewTaskDetails = () => {
       <div className="mt-5">
         {isLoading && <p className="text-gray-500">Loading task details...</p>}
 
-        {isError && (
-          <p className="text-red-500">
-            Error fetching task
-          </p>
-        )}
+        {isError && <p className="text-red-500">Error fetching task</p>}
 
         {!isLoading && !isError && !task && (
           <p className="text-gray-500">Task not found.</p>
@@ -90,7 +128,10 @@ const ViewTaskDetails = () => {
               </div>
 
               <div className="mt-4">
-                <InfoBox label="Description" value={task.description || "N/A"} />
+                <InfoBox
+                  label="Description"
+                  value={task.description || "N/A"}
+                />
               </div>
 
               <div className="grid grid-cols-12 gap-4 mt-4">
@@ -113,8 +154,8 @@ const ViewTaskDetails = () => {
                   </label>
                   <AvatarGroup
                     avatars={
-                      task.assignedTo?.map((user: User) =>
-                        user.avatar?.url || ""
+                      task.assignedTo?.map(
+                        (user: User) => user.avatar?.url || ""
                       ) || []
                     }
                     maxVisible={5}
@@ -138,18 +179,24 @@ const ViewTaskDetails = () => {
               </div>
 
               {(task.attachments ?? []).length > 0 && (
-                <div className="mt-2">
-                  <label className="text-xs font-medium text-slate-500">
+                <div className="mt-4">
+                  <label className="text-xs font-medium text-slate-500 mb-2 block">
                     Attachments
                   </label>
-                  {task.attachments?.map((attachment: Attachment, index: number) => (
-                    <Attachment
-                      key={`link_${index}`}
-                      link={attachment.url}
-                      index={index}
-                      onClick={() => handleLinkClick(attachment.url)}
-                    />
-                  ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {task.attachments?.map(
+                      (attachment: Attachment, index: number) => (
+                        <AttachmentCard
+                          key={`attachment_${index}`}
+                          attachment={attachment}
+                          onView={() => handleAttachment(attachment, "view")}
+                          onDownload={() =>
+                            handleAttachment(attachment, "download")
+                          }
+                        />
+                      )
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -205,25 +252,119 @@ const TodoCheckList: React.FC<TodoCheckListProps> = ({
   );
 };
 
-interface AttachmentProps {
-  link: string;
-  index: number;
-  onClick: () => void;
+interface AttachmentCardProps {
+  attachment: Attachment;
+  onView: () => void;
+  onDownload: () => void;
 }
 
-const Attachment: React.FC<AttachmentProps> = ({ link, index, onClick }) => {
+const AttachmentCard: React.FC<AttachmentCardProps> = ({
+  attachment,
+  onView,
+  onDownload,
+}) => {
+  // Function to get file icon based on fileType
+  const getFileIcon = () => {
+    const type = attachment.fileType?.toLowerCase() || "";
+    const url = attachment.url?.toLowerCase() || "";
+
+    if (type.includes("pdf") || url.match(/\.pdf$/i)) {
+      return <LuFileText className="text-red-500 text-4xl" />;
+    } else if (
+      type.includes("image") ||
+      url.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+    ) {
+      return <LuImage className="text-blue-500 text-4xl" />;
+    } else if (
+      type.includes("excel") ||
+      type.includes("spreadsheet") ||
+      url.match(/\.(xls|xlsx|csv)$/i)
+    ) {
+      return <LuFile className="text-green-500 text-4xl" />;
+    } else if (
+      type.includes("word") ||
+      type.includes("document") ||
+      url.match(/\.(doc|docx)$/i)
+    ) {
+      return <LuFileText className="text-blue-600 text-4xl" />;
+    } else {
+      return <LuFile className="text-gray-500 text-4xl" />;
+    }
+  };
+
+  // Function to get file extension for display
+  const getFileExtension = () => {
+    const filename = attachment.filename || attachment.url;
+    const parts = filename.split(".");
+    if (parts.length > 1) {
+      return parts[parts.length - 1].toUpperCase();
+    }
+    return "";
+  };
+
+  // Format file size
+  const formatFileSize = (bytes?: number) => {
+    if (!bytes) return "";
+
+    if (bytes < 1024) return bytes + " B";
+    else if (bytes < 1048576) return (bytes / 1024).toFixed(1) + " KB";
+    else return (bytes / 1048576).toFixed(1) + " MB";
+  };
+
+  // Check if the file is an image that can be previewed
+  const isPreviewableImage =
+    attachment.fileType?.includes("image") ||
+    attachment.url.match(/\.(jpg|jpeg|png|gif|webp)$/i);
+
   return (
-    <div
-      className="flex justify-between bg-gray-50 border border-gray-100 px-3 py-2 rounded-md mb-3 mt-2 cursor-pointer"
-      onClick={onClick}
-    >
-      <div className="flex-1 flex items-center gap-3">
-        <span className="text-xs text-gray-400 font-semibold mr-2">
-          {index < 9 ? `0${index + 1}` : index + 1}
-        </span>
-        <p className="text-xs text-black">{link}</p>
+    <div className="bg-white border rounded-lg overflow-hidden shadow-sm">
+      <div className="p-4">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center space-x-3">
+            {isPreviewableImage ? (
+              <div className="w-12 h-12 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                <img
+                  src={attachment.url}
+                  alt="Preview"
+                  className="object-cover w-full h-full"
+                />
+              </div>
+            ) : (
+              <div className="w-12 h-12 bg-gray-50 rounded flex items-center justify-center">
+                {getFileIcon()}
+              </div>
+            )}
+            <div>
+              <p
+                className="text-sm font-medium truncate"
+                title={attachment.filename || ""}
+              >
+                {attachment.filename || "Attachment"}
+              </p>
+              <div className="flex items-center space-x-2 text-xs text-gray-500">
+                <span>{getFileExtension()}</span>
+                {attachment.size && <span>•</span>}
+                <span>{formatFileSize(attachment.size)}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex space-x-2">
+          <button
+            onClick={onView}
+            className="flex-1 px-3 py-1.5 bg-gray-100 hover:bg-gray-200 rounded text-xs font-medium flex items-center justify-center"
+          >
+            <LuSquareArrowOutUpRight className="mr-1" /> View
+          </button>
+          <button
+            onClick={onDownload}
+            className="flex-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-600 rounded text-xs font-medium flex items-center justify-center"
+          >
+            <LuDownload className="mr-1" /> Download
+          </button>
+        </div>
       </div>
-      <LuSquareArrowOutUpRight className="text-gray-400" />
     </div>
   );
 };

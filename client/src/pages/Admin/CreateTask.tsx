@@ -156,15 +156,30 @@ const CreateTask = () => {
         })
       );
 
+      // Clean public_id for comparison if needed
+      const cleanPublicId = (publicId: string) =>
+        publicId.replace(/^task-attachments\//, "");
+
       const removeAttachments =
         taskInfo?.attachments
           ?.filter(
             (att) =>
               !taskData.attachments.some(
-                (newAtt) => newAtt.public_id === att.public_id
+                (newAtt) =>
+                  cleanPublicId(newAtt.public_id) ===
+                  cleanPublicId(att.public_id)
               )
           )
-          .map((att) => att.public_id) || [];
+          .map((att) => cleanPublicId(att.public_id)) || [];
+
+      // Ensure existing attachments are included in the payload
+      const existingAttachments = taskData.attachments.map((att) => ({
+        public_id: cleanPublicId(att.public_id),
+        url: att.url,
+        filename: att.filename,
+        fileType: att.fileType,
+        size: att.size,
+      }));
 
       const payload = {
         ...taskData,
@@ -172,8 +187,9 @@ const CreateTask = () => {
           ? new Date(taskData.dueDate).toISOString()
           : undefined,
         todoChecklist: todolist,
-        fileAttachments,
-        removeAttachments,
+        fileAttachments, // New files only
+        attachments: existingAttachments, // Existing attachments
+        removeAttachments, // IDs of attachments to remove
       };
 
       await updateTask({ id: taskId, data: payload }).unwrap();
@@ -253,44 +269,87 @@ const CreateTask = () => {
   //     setPendingFiles([]); // Clear pending files for edit mode
   //   }
   // }, [taskInfo]);
+  //   useEffect(() => {
+  //   if (taskInfo) {
+  //     console.log("taskInfo:", taskInfo);
+  //     console.log("taskInfo.attachments:", taskInfo.attachments);
+  //     setTaskData({
+  //       title: taskInfo.title ?? "",
+  //       description: taskInfo.description ?? "",
+  //       priority: taskInfo.priority ?? "Low",
+  //       dueDate: taskInfo.dueDate
+  //         ? moment(taskInfo.dueDate).format("YYYY-MM-DD")
+  //         : null,
+  //       assignedTo: Array.isArray(taskInfo.assignedTo)
+  //         ? taskInfo.assignedTo.map((user) => user._id || "")
+  //         : [],
+  //       todoChecklist: Array.isArray(taskInfo.todoChecklist)
+  //         ? taskInfo.todoChecklist.map((item) => item.text || "")
+  //         : [],
+  //       attachments: Array.isArray(taskInfo.attachments)
+  //         ? taskInfo.attachments.map((att) => {
+  //             const filename =
+  //               att.filename ||
+  //               (att.url ? (att.url.split("/").pop()?.split("?")[0] || "Unknown") : "Unknown") ||
+  //               "Unknown";
+  //             const cleanPublicId = att.public_id.replace(/^task-attachments\//, "");
+  //             return {
+  //               public_id: cleanPublicId,
+  //               url: att.url || "",
+  //               filename: filename,
+  //               fileType: att.fileType || "unknown",
+  //               size: att.size || 0,
+  //             };
+  //           })
+  //         : [],
+  //     });
+  //     setPendingFiles([]);
+  //     console.log("taskData updated:", taskData);
+  //   }
+  // // eslint-disable-next-line react-hooks/exhaustive-deps
+  // }, [taskInfo]);
   useEffect(() => {
-  if (taskInfo) {
-    console.log("taskInfo:", taskInfo);
-    console.log("taskInfo.attachments:", taskInfo.attachments);
-    setTaskData({
-      title: taskInfo.title ?? "",
-      description: taskInfo.description ?? "",
-      priority: taskInfo.priority ?? "Low",
-      dueDate: taskInfo.dueDate
-        ? moment(taskInfo.dueDate).format("YYYY-MM-DD")
-        : null,
-      assignedTo: Array.isArray(taskInfo.assignedTo)
-        ? taskInfo.assignedTo.map((user) => user._id || "")
-        : [],
-      todoChecklist: Array.isArray(taskInfo.todoChecklist)
-        ? taskInfo.todoChecklist.map((item) => item.text || "")
-        : [],
-      attachments: Array.isArray(taskInfo.attachments)
-        ? taskInfo.attachments.map((att) => {
-            const filename =
-              att.filename ||
-              (att.url ? (att.url.split("/").pop()?.split("?")[0] || "Unknown") : "Unknown") ||
-              "Unknown";
-            const cleanPublicId = att.public_id.replace(/^task-attachments\//, "");
-            return {
-              public_id: cleanPublicId,
-              url: att.url || "",
-              filename: filename,
-              fileType: att.fileType || "unknown",
-              size: att.size || 0,
-            };
-          })
-        : [],
-    });
-    setPendingFiles([]);
-    console.log("taskData updated:", taskData);
-  }
-}, [taskInfo]);
+    if (taskInfo) {
+      console.log("taskInfo:", taskInfo);
+      console.log("taskInfo.attachments:", taskInfo.attachments);
+      setTaskData({
+        title: taskInfo.title ?? "",
+        description: taskInfo.description ?? "",
+        priority: taskInfo.priority ?? "Low",
+        dueDate: taskInfo.dueDate
+          ? moment(taskInfo.dueDate).format("YYYY-MM-DD")
+          : null,
+        assignedTo: Array.isArray(taskInfo.assignedTo)
+          ? taskInfo.assignedTo.map((user) => user._id || "")
+          : [],
+        todoChecklist: Array.isArray(taskInfo.todoChecklist)
+          ? taskInfo.todoChecklist.map((item) => item.text || "")
+          : [],
+        attachments: Array.isArray(taskInfo.attachments)
+          ? taskInfo.attachments.map((att) => {
+              const filename =
+                att.filename ||
+                (att.url
+                  ? att.url.split("/").pop()?.split("?")[0] || "Unknown"
+                  : "Unknown") ||
+                "Unknown";
+              // Keep public_id consistent with server expectations
+              const publicId = att.public_id; // Do not clean here; handle in handleUpdateTask
+              return {
+                public_id: publicId,
+                url: att.url || "",
+                filename: filename,
+                fileType: att.fileType || "unknown",
+                size: att.size || 0,
+              };
+            })
+          : [],
+      });
+      setPendingFiles([]);
+      console.log("taskData updated:", taskData);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [taskInfo]);
 
   const [openDeleteAlert, setOpenDeleteAlert] = useState(false);
 

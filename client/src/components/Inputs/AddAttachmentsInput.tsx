@@ -51,13 +51,10 @@ const AddAttachmentsInput = ({
     const attachment = attachments[index];
     try {
       if (taskId && !attachment.public_id.startsWith("temp_")) {
-        const cleanAttachmentId = attachment.public_id.replace(
-          /^task-attachments\//,
-          ""
-        );
+         const cleanAttachmentId = attachment.public_id.replace(/^task-attachments\//, "");
         await deleteAttachment({
           id: taskId,
-          attachmentId: cleanAttachmentId,
+          attachmentId: cleanAttachmentId
         }).unwrap();
         toast.success("Attachment deleted successfully");
       }

@@ -1,4 +1,3 @@
-import React from "react";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
 import { LuFileSpreadsheet } from "react-icons/lu";
 import UserCard from "../../components/Cards/UserCard";
@@ -12,8 +11,6 @@ const ManageUsers = () => {
   // Fetch users
   const { data: allUsers, isLoading, isError } = useGetAllUsersQuery({});
   const users = allUsers?.usersWithTaskCounts || [];
-  console.log(users);
-
   // Download report mutation
   const [exportUsersReport, { isLoading: isExporting }] =
     useExportUsersReportMutation();

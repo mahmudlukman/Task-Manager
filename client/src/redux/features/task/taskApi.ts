@@ -51,7 +51,7 @@ export const taskApi = apiSlice.injectEndpoints({
     }),
     getTask: builder.query<Task, { id: string }>({
       query: ({ id }) => ({
-        url: `task/${id}`,
+        url: `task-details/${id}`,
         method: "GET",
         credentials: "include" as const,
       }),
@@ -88,19 +88,19 @@ export const taskApi = apiSlice.injectEndpoints({
           : [{ type: "Task", id: "LIST" }],
     }),
     updateTask: builder.mutation({
-      query: ({ id, data }) => ({
-        url: `update-task/${id}`,
-        method: "PUT",
-        body: data,
-        credentials: "include" as const,
-      }),
-      invalidatesTags: (arg) => {
-        return [
-          { type: "Task", id: arg?.id || "UNKNOWN" },
-          { type: "Task", id: "LIST" },
-        ];
-      },
-    }),
+  query: ({ id, data }) => ({
+    url: `update-task/${id}`,
+    method: "PUT",
+    body: data,
+    credentials: "include" as const,
+  }),
+  invalidatesTags: (arg) => {
+    return [
+      { type: "Task", id: arg?.id || "UNKNOWN" },
+      { type: "Task", id: "LIST" },
+    ];
+  },
+}),
     updateTaskStatus: builder.mutation({
       query: ({ id, data }) => ({
         url: `status/${id}`,

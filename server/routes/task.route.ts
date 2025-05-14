@@ -16,7 +16,7 @@ import { authorizeRoles, isAuthenticated } from "../middleware/auth";
 const taskRouter = express.Router();
 
 taskRouter.get("/tasks", isAuthenticated, getTasks); // Get all tasks (Admin: all, User: assigned)
-taskRouter.get("/task/:id", isAuthenticated, getTask); // Get task by ID
+taskRouter.get("/task-details/:id", isAuthenticated, getTask); // Get task by ID
 taskRouter.post(
   "/create-task",
   isAuthenticated,

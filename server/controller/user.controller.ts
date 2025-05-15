@@ -47,9 +47,10 @@ export const getUserById = catchAsyncError(
 export const getUsers = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const users = await User.find({ role: "member" }).select("-password");
+      // Fetch all users, excluding password
+      const users = await User.find().select("-password");
 
-      // Add task counts to each user
+      // Add task counts to each user and filter those with tasks
       const usersWithTaskCounts = await Promise.all(
         users.map(async (user) => {
           const pendingTasks = await Task.countDocuments({
@@ -65,21 +66,70 @@ export const getUsers = catchAsyncError(
             status: "Completed",
           });
 
-          return {
-            ...user.toObject(), // Include all existing user data
-            pendingTasks,
-            inProgressTasks,
-            completedTasks,
-          };
+          // Only include users with at least one task
+          if (pendingTasks > 0 || inProgressTasks > 0 || completedTasks > 0) {
+            return {
+              ...user.toObject(), // Include all existing user data
+              pendingTasks,
+              inProgressTasks,
+              completedTasks,
+            };
+          }
+          return null; // Exclude users with zero tasks
         })
       );
 
-      res.status(200).json({ success: true, users, usersWithTaskCounts });
+      // Filter out null entries from usersWithTaskCounts
+      const filteredUsersWithTaskCounts = usersWithTaskCounts.filter(
+        (user) => user !== null
+      );
+
+      res.status(200).json({
+        success: true,
+        users, // All users
+        usersWithTaskCounts: filteredUsersWithTaskCounts, // Only users with tasks
+      });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }
   }
 );
+// export const getUsers = catchAsyncError(
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//       const users = await User.find().select("-password");
+
+//       // Add task counts to each user
+//       const usersWithTaskCounts = await Promise.all(
+//         users.map(async (user) => {
+//           const pendingTasks = await Task.countDocuments({
+//             assignedTo: user._id,
+//             status: "Pending",
+//           });
+//           const inProgressTasks = await Task.countDocuments({
+//             assignedTo: user._id,
+//             status: "In Progress",
+//           });
+//           const completedTasks = await Task.countDocuments({
+//             assignedTo: user._id,
+//             status: "Completed",
+//           });
+
+//           return {
+//             ...user.toObject(), // Include all existing user data
+//             pendingTasks,
+//             inProgressTasks,
+//             completedTasks,
+//           };
+//         })
+//       );
+
+//       res.status(200).json({ success: true, users, usersWithTaskCounts });
+//     } catch (error: any) {
+//       return next(new ErrorHandler(error.message, 400));
+//     }
+//   }
+// );
 
 // @desc    Get user profile
 // @route   GET /api/v1/update-user/
@@ -124,7 +174,7 @@ export const updateUser = catchAsyncError(
 );
 
 // @desc    Get user profile
-// @route   GET /api/v1/update-user/
+// @route   GET /api/v1/update-user-role
 // @access  Private (Admin)
 export const updateUserRole = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {

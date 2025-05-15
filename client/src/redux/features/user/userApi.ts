@@ -48,10 +48,12 @@ export const userApi = apiSlice.injectEndpoints({
         body: data,
         credentials: "include" as const,
       }),
-      invalidatesTags: (arg) => [
-        { type: "User", id: arg.data.id },
-        { type: "User", id: "LIST" },
-      ],
+      invalidatesTags: (arg) => {
+        return [
+          { type: "User", id: arg?.id || "UNKNOWN" },
+          { type: "User", id: "LIST" },
+        ];
+      },
     }),
     deleteUser: builder.mutation({
       query: (id) => ({
@@ -59,10 +61,12 @@ export const userApi = apiSlice.injectEndpoints({
         method: "DELETE",
         credentials: "include" as const,
       }),
-      invalidatesTags: (id) => [
-        { type: "User", id },
-        { type: "User", id: "LIST" },
-      ],
+      invalidatesTags: (result, error, id) => {
+        return [
+          { type: "User", id },
+          { type: "User", id: "LIST" },
+        ];
+      },
     }),
   }),
 });

@@ -1,6 +1,7 @@
 export interface RootState {
   auth: {
     user: {
+      _id: string;
       name: string;
       email: string;
       avatar: {

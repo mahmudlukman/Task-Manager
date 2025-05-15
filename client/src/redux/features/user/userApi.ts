@@ -27,20 +27,25 @@ export const userApi = apiSlice.injectEndpoints({
         url: "update-user",
         method: "PUT",
         body: data,
-        formData: true,
         credentials: "include" as const,
       }),
-      invalidatesTags: (arg) => [
-        { type: "User", id: arg.data.id },
-        { type: "User", id: "LIST" },
-      ],
+      // The fix is here - make the invalidation safer
+      invalidatesTags: (result) => {
+        // Only invalidate if we have a successful result
+        if (result?.success) {
+          return [
+            { type: "User", id: "me" },
+            { type: "User", id: "LIST" },
+          ];
+        }
+        return []; // Don't invalidate anything if there's an error
+      },
     }),
     updateUserRole: builder.mutation({
       query: ({ data }) => ({
         url: "update-user-role",
         method: "PUT",
         body: data,
-        formData: true,
         credentials: "include" as const,
       }),
       invalidatesTags: (arg) => [

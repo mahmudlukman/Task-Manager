@@ -1,9 +1,18 @@
 import { User } from "../@types";
-import { useUpdateUserRoleMutation } from "../redux/features/user/userApi"; // Adjust path
+import {
+  useUpdateUserRoleMutation,
+  useDeleteUserMutation,
+} from "../redux/features/user/userApi";
 import { toast } from "react-hot-toast";
+import { FaTrash } from "react-icons/fa";
+import DeleteAlert from "./DeleteAlert";
+import { useState } from "react";
 
 const UsersTable = ({ usersData }: { usersData: User[] }) => {
-  const [updateUserRole, { isLoading: isUpdating }] = useUpdateUserRoleMutation();
+  const [updateUserRole, { isLoading: isUpdating }] =
+    useUpdateUserRoleMutation();
+  const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
 
   // Define available roles (adjust based on your app's roles)
   const availableRoles = ["admin", "member"]; // Example roles
@@ -16,6 +25,28 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
       toast.error("Failed to update user role");
       console.error("Role update error:", error);
     }
+  };
+
+  const handleDeleteClick = (userId: string) => {
+    setDeleteUserId(userId); // Show confirmation modal
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteUserId) return;
+
+    try {
+      await deleteUser(deleteUserId).unwrap();
+      toast.success("User deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete user");
+      console.error("Delete user error:", error);
+    } finally {
+      setDeleteUserId(null); // Close modal
+    }
+  };
+
+  const handleCancelDelete = () => {
+    setDeleteUserId(null); // Close modal
   };
 
   return (
@@ -33,8 +64,11 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
               Role
             </th>
             <th className="py-3 px-4 text-gray-800 font-medium text-[13px] hidden md:table-cell">
-              Status
+              Action
             </th>
+            {/* <th className="py-3 px-4 text-gray-800 font-medium text-[13px] hidden md:table-cell">
+              Status
+            </th> */}
           </tr>
         </thead>
         <tbody>
@@ -83,11 +117,38 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                     {user.status || "N/A"}
                   </span>
                 </td> */}
+                <td className="py-4 px-4">
+                  <button
+                    onClick={() => handleDeleteClick(user._id)}
+                    disabled={isDeleting}
+                    className="text-rose-500 hover:text-rose-700"
+                    title="Delete user"
+                  >
+                    <FaTrash className="w-4 h-4" />
+                  </button>
+                </td>
               </tr>
             );
           })}
         </tbody>
       </table>
+      {/* Delete Confirmation Modal */}
+      {deleteUserId && (
+        <div className="fixed inset-0 flex items-center justify-center z-50">
+          <div className="bg-red-400 text-white rounded-lg p-6 max-w-sm w-full">
+            <DeleteAlert
+              content="Are you sure you want to delete this user? This action cannot be undone."
+              onDelete={handleConfirmDelete}
+            />
+            <button
+              onClick={handleCancelDelete}
+              className="mt-2 text-sm text-white hover:text-gray-700"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

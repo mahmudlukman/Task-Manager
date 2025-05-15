@@ -42,15 +42,30 @@ const SideMenu = ({ activeMenu }: { activeMenu: string }) => {
     }
   }, [user]);
 
+  // Helper to check if a string is a valid URL
+  const isImageUrl = (str?: string) => str && str.match(/^(http|https):\/\//);
+
+  // Get initial or fallback
+  const initial =
+    user?.name && user.name.trim() ? user.name.charAt(0).toUpperCase() : "U";
+
   return (
     <div className="w-64 h-[calc(100vh-61px)] bg-white border-r border-gray-200/50 sticky top-[61px] z-20">
       <div className="flex flex-col items-center justify-center mb-7 pt-5">
         <div className="relative">
-          <img
-            src={user?.avatar?.url || ""}
-            alt="Profile Image"
-            className="w-20 h-20 bg-slate-400 rounded-full"
-          />
+          <div className="w-12 h-12 rounded-full border-2 border-white overflow-hidden">
+            {isImageUrl(user?.avatar?.url) ? (
+              <img
+                src={user?.avatar?.url ?? ""}
+                alt="Avatar"
+                className="w-full h-full rounded-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center bg-blue-100 text-blue-800 text-lg font-medium rounded-full">
+                {initial}
+              </div>
+            )}
+          </div>
         </div>
 
         {user?.role === "admin" && (

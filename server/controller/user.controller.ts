@@ -199,40 +199,63 @@ export const deleteUser = catchAsyncError(
     try {
       const { userId } = req.params;
 
-      // Check if the user exists
-      const user = await User.findById(userId);
+      if (!userId) {
+        return next(new ErrorHandler("Missing user ID", 400));
+      }
+
+      const user = await User.findByIdAndDelete(userId);
 
       if (!user) {
-        return next(new ErrorHandler("User not found", 404));
+        return next(new ErrorHandler(`User not found: ${userId}`, 404));
       }
-
-      // Find all tasks assigned to the user
-      const userTasks = await Task.find({ assignedTo: userId });
-
-      // Delete all task attachments from Cloudinary
-      for (const task of userTasks) {
-        if (task.attachments && task.attachments.length > 0) {
-          await deleteAttachmentsFromCloudinary(task.attachments);
-        }
-      }
-
-      // Delete user's avatar from Cloudinary if it exists
-      if (user.avatar && user.avatar.public_id) {
-        await cloudinary.v2.uploader.destroy(user.avatar.public_id);
-      }
-
-      // Delete all tasks associated with the user
-      await Task.deleteMany({ assignedTo: userId });
-
-      // Finally, delete the user
-      await User.findByIdAndDelete(userId);
-
       res.status(200).json({
         success: true,
-        message: "User and all associated data deleted successfully",
+        message: "User deleted successfully",
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
     }
   }
 );
+// export const deleteUser = catchAsyncError(
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     try {
+//       const { userId } = req.params;
+
+//       // Check if the user exists
+//       const user = await User.findById(userId);
+
+//       if (!user) {
+//         return next(new ErrorHandler("User not found", 404));
+//       }
+
+//       // Find all tasks assigned to the user
+//       const userTasks = await Task.find({ assignedTo: userId });
+
+//       // Delete all task attachments from Cloudinary
+//       for (const task of userTasks) {
+//         if (task.attachments && task.attachments.length > 0) {
+//           await deleteAttachmentsFromCloudinary(task.attachments);
+//         }
+//       }
+
+//       // Delete user's avatar from Cloudinary if it exists
+//       if (user.avatar && user.avatar.public_id) {
+//         await cloudinary.v2.uploader.destroy(user.avatar.public_id);
+//       }
+
+//       // Delete all tasks associated with the user
+//       await Task.deleteMany({ assignedTo: userId });
+
+//       // Finally, delete the user
+//       await User.findByIdAndDelete(userId);
+
+//       res.status(200).json({
+//         success: true,
+//         message: "User and all associated data deleted successfully",
+//       });
+//     } catch (error: any) {
+//       return next(new ErrorHandler(error.message, 400));
+//     }
+//   }
+// );

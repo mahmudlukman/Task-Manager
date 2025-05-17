@@ -134,18 +134,32 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
       </table>
       {/* Delete Confirmation Modal */}
       {deleteUserId && (
-        <div className="fixed inset-0 flex items-center justify-center z-50">
-          <div className="bg-red-400 text-white rounded-lg p-6 max-w-sm w-full">
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          {/* Semi-transparent overlay */}
+          <div
+            className="absolute inset-0"
+            onClick={handleCancelDelete} // Close when clicking outside
+          ></div>
+
+          {/* Modal container */}
+          <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4 z-10">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Confirm Deletion
+              </h3>
+              <button
+                onClick={handleCancelDelete}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Using the updated DeleteAlert component */}
             <DeleteAlert
               content="Are you sure you want to delete this user? This action cannot be undone."
               onDelete={handleConfirmDelete}
             />
-            <button
-              onClick={handleCancelDelete}
-              className="mt-2 text-sm text-white hover:text-gray-700"
-            >
-              Cancel
-            </button>
           </div>
         </div>
       )}

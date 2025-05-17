@@ -36,6 +36,12 @@ import {
     },
     {
       id: "05",
+      label: "My Profile",
+      icon: LuUser,
+      path: "/admin/profile",
+    },
+    {
+      id: "06",
       label: "Logout",
       icon: LuLogOut,
       path: "logout",

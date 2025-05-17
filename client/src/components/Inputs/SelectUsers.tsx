@@ -17,6 +17,10 @@ const SelectUsers = ({ selectedUsers, setSelectedUsers }: SelectUsersProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [tempSelectedUsers, setTempSelectedUsers] = useState<string[]>([]);
 
+  useEffect(() => {
+    setTempSelectedUsers([...selectedUsers]);
+  }, [selectedUsers, isModalOpen]);
+
   const toggleUserSelection = (userId: string) => {
     setTempSelectedUsers((prev) =>
       prev.includes(userId)
@@ -37,7 +41,7 @@ const SelectUsers = ({ selectedUsers, setSelectedUsers }: SelectUsersProps) => {
       user.avatar?.url ? user?.name?.charAt(0).toUpperCase() : ""
     );
 
-     // Helper to check if a string is a valid image URL
+  // Helper to check if a string is a valid image URL
   const isImageUrl = (str?: string) => str && str.match(/^(http|https):\/\//);
 
   useEffect(() => {

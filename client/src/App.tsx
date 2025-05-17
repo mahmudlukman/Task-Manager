@@ -1,4 +1,8 @@
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
+import {
+  createBrowserRouter,
+  RouterProvider,
+  Navigate,
+} from "react-router-dom";
 import Dashboard from "./pages/Admin/Dashboard";
 import Login from "./pages/Auth/Login";
 import SignUp from "./pages/Auth/SignUp";
@@ -17,32 +21,31 @@ import { RootState } from "./@types";
 // Root component to handle redirection
 const Root = () => {
   const { user } = useSelector((state: RootState) => state.auth);
-  
+
   if (!user) {
     return <Navigate to="/login" />;
   }
-  
+
   if (user.role === "admin") {
     return <Navigate to="/admin/dashboard" />;
   }
-  
+
   return <Navigate to="/user/dashboard" />;
 };
-
 
 // Create the router configuration
 const router = createBrowserRouter([
   {
     path: "/",
-    element: <Root />
+    element: <Root />,
   },
   {
     path: "/login",
-    element: <Login />
+    element: <Login />,
   },
   {
     path: "/signUp",
-    element: <SignUp />
+    element: <SignUp />,
   },
   // Admin Routes
   {
@@ -51,21 +54,25 @@ const router = createBrowserRouter([
     children: [
       {
         path: "dashboard",
-        element: <Dashboard />
+        element: <Dashboard />,
       },
       {
         path: "tasks",
-        element: <ManageTasks />
+        element: <ManageTasks />,
       },
       {
         path: "create-task",
-        element: <CreateTask />
+        element: <CreateTask />,
       },
       {
         path: "users",
-        element: <ManageUsers />
-      }
-    ]
+        element: <ManageUsers />,
+      },
+      {
+        path: "profile",
+        element: <UserProfile />,
+      },
+    ],
   },
   // User Routes
   {
@@ -74,22 +81,22 @@ const router = createBrowserRouter([
     children: [
       {
         path: "dashboard",
-        element: <UserDashboard />
+        element: <UserDashboard />,
       },
       {
         path: "tasks",
-        element: <MyTasks />
+        element: <MyTasks />,
       },
       {
         path: "profile",
-        element: <UserProfile />
+        element: <UserProfile />,
       },
       {
         path: "task-details/:id",
-        element: <ViewTaskDetails />
-      }
-    ]
-  }
+        element: <ViewTaskDetails />,
+      },
+    ],
+  },
 ]);
 
 const App = () => {

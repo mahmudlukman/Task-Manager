@@ -4,6 +4,7 @@ import { NextFunction, Request, Response } from "express";
 import cloudinary from "cloudinary";
 import dotenv from "dotenv";
 import Task, { ITask, IAttachment } from "../model/Task.model";
+import Notification from "../model/Notification.model";
 dotenv.config();
 
 // Helper function to upload attachments to Cloudinary
@@ -59,8 +60,29 @@ export const deleteAttachmentsFromCloudinary = async (
   }
 };
 
+// Helper function to create notifications for assigned users
+const createNotificationsForUsers = async (
+  userIds: string[],
+  title: string,
+  message: string
+) => {
+  try {
+    const notificationPromises = userIds.map((userId: string) =>
+      Notification.create({
+        userId: userId,
+        title: title,
+        message: message,
+        status: "unread", // Explicitly set to match model default
+      })
+    );
+    await Promise.all(notificationPromises);
+  } catch (error) {
+    console.error("Error creating notifications:", error);
+  }
+};
+
 // @desc    Create a new task with optional attachments
-// @route   POST /api/tasks/
+// @route   POST /api/v1/tasks
 // @access  Private (Admin)
 export const createTask = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -111,6 +133,13 @@ export const createTask = catchAsyncError(
       // Create the task with all data including attachments
       const task = await Task.create(taskData);
 
+      // Create notifications for all assigned users
+      await createNotificationsForUsers(
+        assignedTo,
+        "New Task Assigned",
+        `You have been assigned a new task: "${task.title}"`
+      );
+
       res.status(201).json({
         success: true,
         message: "Task created successfully",
@@ -123,7 +152,7 @@ export const createTask = catchAsyncError(
 );
 
 // @desc    Update an existing task and its attachments
-// @route   PUT /api/tasks/:id
+// @route   PUT /api/v1/tasks/:id
 // @access  Private (Admin)
 export const updateTask = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -147,6 +176,12 @@ export const updateTask = catchAsyncError(
       if (!task) {
         return next(new ErrorHandler("Task not found", 404));
       }
+
+      // Store original assignedTo for comparison
+      const originalAssignedTo = task.assignedTo.map((id) => id.toString());
+      const newAssignedTo = assignedTo
+        ? assignedTo.map((id: string) => id.toString())
+        : originalAssignedTo;
 
       // Prepare update data
       const updateData: any = {};
@@ -210,6 +245,46 @@ export const updateTask = catchAsyncError(
         .populate("assignedTo", "name email")
         .populate("createdBy", "name email");
 
+      // Send notifications for task updates
+      let notifyUsers: string[] = [];
+      let notificationTitle = "";
+      let notificationMessage = "";
+
+      // Check if assignedTo changed (new users added)
+      const newlyAssignedUsers = newAssignedTo.filter(
+        (userId: string) => !originalAssignedTo.includes(userId)
+      );
+
+      if (newlyAssignedUsers.length > 0) {
+        // Notify newly assigned users
+        await createNotificationsForUsers(
+          newlyAssignedUsers,
+          "New Task Assignment",
+          `You have been assigned to task: "${updatedTask?.title}"`
+        );
+      }
+
+      // Notify all current assigned users about significant updates
+      const hasSignificantUpdates =
+        title || description || priority || dueDate || status;
+
+      if (hasSignificantUpdates) {
+        const updateDetails = [];
+        if (title) updateDetails.push("title");
+        if (description) updateDetails.push("description");
+        if (priority) updateDetails.push("priority");
+        if (dueDate) updateDetails.push("due date");
+        if (status) updateDetails.push("status");
+
+        await createNotificationsForUsers(
+          newAssignedTo,
+          "Task Updated",
+          `Task "${
+            updatedTask?.title
+          }" has been updated. Changes: ${updateDetails.join(", ")}`
+        );
+      }
+
       res.status(200).json({
         success: true,
         message: "Task updated successfully",
@@ -222,7 +297,7 @@ export const updateTask = catchAsyncError(
 );
 
 // @desc    Delete a task and all its attachments
-// @route   DELETE /api/tasks/:id
+// @route   DELETE /api/v1/tasks/:id
 // @access  Private (Admin)
 export const deleteTask = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -234,6 +309,13 @@ export const deleteTask = catchAsyncError(
       if (!task) {
         return next(new ErrorHandler("Task not found", 404));
       }
+
+      // Notify assigned users about task deletion
+      await createNotificationsForUsers(
+        task.assignedTo.map((id) => id.toString()),
+        "Task Deleted",
+        `Task "${task.title}" has been deleted`
+      );
 
       // Delete all attachments from Cloudinary
       if (task.attachments && task.attachments.length > 0) {
@@ -254,7 +336,7 @@ export const deleteTask = catchAsyncError(
 );
 
 // @desc    Update task attachments
-// @route   PUT /api/tasks/:id/attachments
+// @route   PUT /api/v1/tasks/:id/attachments
 // @access  Private
 export const updateTaskAttachments = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -307,6 +389,15 @@ export const updateTaskAttachments = catchAsyncError(
           fileAttachments
         );
         task.attachments.push(...newAttachments);
+
+        // Notify assigned users about new attachments
+        if (newAttachments.length > 0) {
+          await createNotificationsForUsers(
+            task.assignedTo.map((id) => id.toString()),
+            "Task Attachments Updated",
+            `New attachments have been added to task: "${task.title}"`
+          );
+        }
       }
 
       // Save the updated task
@@ -324,7 +415,7 @@ export const updateTaskAttachments = catchAsyncError(
 );
 
 // @desc    Get a task with its attachments
-// @route   GET /api/task/:id
+// @route   GET /api/v1/task/:id
 // @access  Private
 export const getTask = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -348,7 +439,7 @@ export const getTask = catchAsyncError(
 );
 
 // @desc    Delete a single attachment from a task
-// @route   DELETE /api/tasks/:id/attachments/:attachmentId
+// @route   DELETE /api/v1/tasks/:id/attachments/:attachmentId
 // @access  Private
 export const deleteTaskAttachment = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -394,7 +485,7 @@ export const deleteTaskAttachment = catchAsyncError(
 );
 
 // @desc    Get all task (Admin: all, User: only assigned tasks)
-// @route   GET /api/tasks/
+// @route   GET /api/v1/tasks
 // @access  Private
 export const getTasks = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -470,7 +561,7 @@ export const getTasks = catchAsyncError(
 );
 
 // @desc    Update task status
-// @route   PUT /api/tasks/:id/status
+// @route   PUT /api/v1/tasks/:id/status
 // @access  Private
 export const updateTaskStatus = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -488,6 +579,7 @@ export const updateTaskStatus = catchAsyncError(
         return next(new ErrorHandler("Not authorized", 403));
       }
 
+      const oldStatus = task.status;
       task.status = req.body.status || task.status;
 
       if (task.status === "Completed") {
@@ -496,6 +588,36 @@ export const updateTaskStatus = catchAsyncError(
       }
 
       await task.save();
+
+      // Notify assigned users if status changed significantly
+      if (oldStatus !== task.status) {
+        const assignedUsers = task.assignedTo
+          .map((id) => id.toString())
+          .filter((userId) => userId !== req.user._id.toString()); // Don't notify the user who made the change
+
+        if (assignedUsers.length > 0) {
+          await createNotificationsForUsers(
+            assignedUsers,
+            "Task Status Updated",
+            `Task "${task.title}" status changed from "${oldStatus}" to "${task.status}"`
+          );
+        }
+
+        // If task is completed, notify the creator (if it's not the same person)
+        if (
+          task.status === "Completed" &&
+          task.createdBy.toString() !== req.user._id.toString()
+        ) {
+          await createNotificationsForUsers(
+            [task.createdBy.toString()],
+            "Task Completed",
+            `Task "${task.title}" has been completed by ${
+              req.user.name || "a team member"
+            }`
+          );
+        }
+      }
+
       res.json({ message: "Task status updated", task });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
@@ -504,7 +626,7 @@ export const updateTaskStatus = catchAsyncError(
 );
 
 // @desc    Update task checklist
-// @route   PUT /api/tasks/:id/todo
+// @route   PUT /api/v1/tasks/:id/todo
 // @access  Private
 export const updateTaskChecklist = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -525,6 +647,7 @@ export const updateTaskChecklist = catchAsyncError(
           .json({ message: "Not authorized to update checklist" });
       }
 
+      const oldProgress = task.progress;
       task.todoChecklist = todoChecklist; // Replace with updated checklist
 
       // Auto-update progress based on checklist completion
@@ -536,6 +659,7 @@ export const updateTaskChecklist = catchAsyncError(
         totalItems > 0 ? Math.round((completedCount / totalItems) * 100) : 0;
 
       // Auto-mark task as completed if all items are checked
+      const oldStatus = task.status;
       if (task.progress === 100) {
         task.status = "Completed";
       } else if (task.progress > 0) {
@@ -545,6 +669,46 @@ export const updateTaskChecklist = catchAsyncError(
       }
 
       await task.save();
+
+      // Notify about significant progress changes
+      const progressThreshold = 25; // Notify every 25% progress
+      const oldProgressGroup = Math.floor(oldProgress / progressThreshold);
+      const newProgressGroup = Math.floor(task.progress / progressThreshold);
+
+      if (newProgressGroup > oldProgressGroup || oldStatus !== task.status) {
+        const assignedUsers = task.assignedTo
+          .map((id) => id.toString())
+          .filter((userId) => userId !== req.user._id.toString());
+
+        if (assignedUsers.length > 0) {
+          let notificationMessage = "";
+
+          if (task.status === "Completed") {
+            notificationMessage = `Task "${task.title}" has been completed!`;
+          } else {
+            notificationMessage = `Task "${task.title}" progress updated to ${task.progress}%`;
+          }
+
+          await createNotificationsForUsers(
+            assignedUsers,
+            "Task Progress Updated",
+            notificationMessage
+          );
+        }
+
+        // Notify task creator if task is completed
+        if (
+          task.status === "Completed" &&
+          task.createdBy.toString() !== req.user._id.toString()
+        ) {
+          await createNotificationsForUsers(
+            [task.createdBy.toString()],
+            "Task Completed",
+            `Task "${task.title}" has been completed`
+          );
+        }
+      }
+
       const updatedTask = await Task.findById(req.params.id).populate(
         "assignedTo",
         "name email avatar"
@@ -557,9 +721,9 @@ export const updateTaskChecklist = catchAsyncError(
   }
 );
 
-// @desc    Dashboard Data (Admin only)
-// @route   GET /api/tasks/dashboard-data
-// @access  Private
+// @desc    Dashboard Data 
+// @route   GET /api/v1/tasks/dashboard-data
+// @access  Private (Admin only)
 export const getDashboardData = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -638,9 +802,9 @@ export const getDashboardData = catchAsyncError(
   }
 );
 
-// @desc    Dashboard Data (User-specific)
-// @route   GET /api/tasks/user-dashboard-data
-// @access  Private
+// @desc    Dashboard Data 
+// @route   GET /api/v1/tasks/user-dashboard-data
+// @access  Private (User-specific)
 export const getUserDashboardData = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -721,4 +885,3 @@ export const getUserDashboardData = catchAsyncError(
     }
   }
 );
-

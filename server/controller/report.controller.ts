@@ -6,7 +6,7 @@ import excelJS from "exceljs";
 import User from "../model/User.model";
 
 // @desc    Export all tasks as an Excel file
-// @route   GET /api/reports/export/tasks
+// @route   GET /api/v1/reports/export/tasks
 // @access  Private (Admin)
 export const exportTasksReport = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -68,7 +68,7 @@ interface UserTaskStats {
 }
 
 // @desc    Export user-task report as an Excel file
-// @route   GET /api/reports/export/users
+// @route   GET /api/v1/reports/export/users
 // @access  Private (Admin)
 export const exportUsersReport = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {

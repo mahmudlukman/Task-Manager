@@ -6,7 +6,6 @@ import { NextFunction, Request, Response } from "express";
 import { UpdateUserParams } from "../@types";
 import cloudinary from "cloudinary";
 import Task from "../model/Task.model";
-import { deleteAttachmentsFromCloudinary } from "./task.controller";
 
 // @desc    Get logged in user profile
 // @route   GET /api/v1/me
@@ -41,9 +40,9 @@ export const getUserById = catchAsyncError(
   }
 );
 
-// @desc    Get all users (Admin only)
-// @route   GET /api/users/
-// @access  Private (Admin)
+// @desc    Get all users 
+// @route   GET /api/v1/users
+// @access  Private (Admin only)
 export const getUsers = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -94,42 +93,6 @@ export const getUsers = catchAsyncError(
     }
   }
 );
-// export const getUsers = catchAsyncError(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//       const users = await User.find().select("-password");
-
-//       // Add task counts to each user
-//       const usersWithTaskCounts = await Promise.all(
-//         users.map(async (user) => {
-//           const pendingTasks = await Task.countDocuments({
-//             assignedTo: user._id,
-//             status: "Pending",
-//           });
-//           const inProgressTasks = await Task.countDocuments({
-//             assignedTo: user._id,
-//             status: "In Progress",
-//           });
-//           const completedTasks = await Task.countDocuments({
-//             assignedTo: user._id,
-//             status: "Completed",
-//           });
-
-//           return {
-//             ...user.toObject(), // Include all existing user data
-//             pendingTasks,
-//             inProgressTasks,
-//             completedTasks,
-//           };
-//         })
-//       );
-
-//       res.status(200).json({ success: true, users, usersWithTaskCounts });
-//     } catch (error: any) {
-//       return next(new ErrorHandler(error.message, 400));
-//     }
-//   }
-// );
 
 // @desc    Get user profile
 // @route   GET /api/v1/update-user/
@@ -192,7 +155,7 @@ export const updateUserRole = catchAsyncError(
 );
 
 // @desc    Delete user and all associated data (tasks, attachments)
-// @route   DELETE /api/users/:userId
+// @route   DELETE /api/v1/users/:userId
 // @access  Private (Admin only)
 export const deleteUser = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
@@ -217,45 +180,3 @@ export const deleteUser = catchAsyncError(
     }
   }
 );
-// export const deleteUser = catchAsyncError(
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     try {
-//       const { userId } = req.params;
-
-//       // Check if the user exists
-//       const user = await User.findById(userId);
-
-//       if (!user) {
-//         return next(new ErrorHandler("User not found", 404));
-//       }
-
-//       // Find all tasks assigned to the user
-//       const userTasks = await Task.find({ assignedTo: userId });
-
-//       // Delete all task attachments from Cloudinary
-//       for (const task of userTasks) {
-//         if (task.attachments && task.attachments.length > 0) {
-//           await deleteAttachmentsFromCloudinary(task.attachments);
-//         }
-//       }
-
-//       // Delete user's avatar from Cloudinary if it exists
-//       if (user.avatar && user.avatar.public_id) {
-//         await cloudinary.v2.uploader.destroy(user.avatar.public_id);
-//       }
-
-//       // Delete all tasks associated with the user
-//       await Task.deleteMany({ assignedTo: userId });
-
-//       // Finally, delete the user
-//       await User.findByIdAndDelete(userId);
-
-//       res.status(200).json({
-//         success: true,
-//         message: "User and all associated data deleted successfully",
-//       });
-//     } catch (error: any) {
-//       return next(new ErrorHandler(error.message, 400));
-//     }
-//   }
-// );

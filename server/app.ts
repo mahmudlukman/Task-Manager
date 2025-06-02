@@ -9,6 +9,7 @@ import userRouter from "./routes/user.route";
 import authRouter from "./routes/auth.route";
 import taskRouter from "./routes/task.route";
 import reportRouter from "./routes/report.route";
+import notificationRouter from "./routes/notification.route";
 
 export const app = express();
 //config
@@ -37,7 +38,14 @@ app.use("/docs.json", (req, res) => {
 });
 
 //routes
-app.use("/api/v1", authRouter, userRouter, taskRouter, reportRouter);
+app.use(
+  "/api/v1",
+  authRouter,
+  userRouter,
+  taskRouter,
+  reportRouter,
+  notificationRouter
+);
 
 //testing route
 app.get("/test", (req: Request, res: Response, next: NextFunction) => {

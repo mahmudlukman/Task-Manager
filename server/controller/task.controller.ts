@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import Task, { ITask, IAttachment } from "../model/Task.model";
 import Notification from "../model/Notification.model";
 dotenv.config();
+import { Server as SocketIOServer } from "socket.io";
 
 // Helper function to upload attachments to Cloudinary
 const uploadAttachmentsToCloudinary = async (
@@ -61,6 +62,12 @@ export const deleteAttachmentsFromCloudinary = async (
 };
 
 // Helper function to create notifications for assigned users
+let io: SocketIOServer; // Store Socket.IO instance
+
+export const setSocketServer = (socketServer: SocketIOServer) => {
+  io = socketServer;
+};
+
 const createNotificationsForUsers = async (
   userIds: string[],
   title: string,
@@ -69,13 +76,25 @@ const createNotificationsForUsers = async (
   try {
     const notificationPromises = userIds.map((userId: string) =>
       Notification.create({
-        userId: userId,
-        title: title,
-        message: message,
-        status: "unread", // Explicitly set to match model default
+        userId,
+        title,
+        message,
+        status: "unread",
       })
     );
-    await Promise.all(notificationPromises);
+    const notifications = await Promise.all(notificationPromises);
+
+    // Emit notifications to each user's room
+    notifications.forEach((notification) => {
+      io.to(notification.userId.toString()).emit("newNotification", {
+        _id: notification._id,
+        userId: notification.userId,
+        title: notification.title,
+        message: notification.message,
+        status: notification.status,
+        createdAt: notification.createdAt,
+      });
+    });
   } catch (error) {
     console.error("Error creating notifications:", error);
   }

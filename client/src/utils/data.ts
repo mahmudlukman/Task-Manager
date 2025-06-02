@@ -4,8 +4,8 @@ import {
     LuClipboardCheck,
     LuSquarePlus,
     LuLogOut,
-    LuUser
-  
+    LuUser,
+    LuBell
   } from "react-icons/lu";
   
   
@@ -36,12 +36,18 @@ import {
     },
     {
       id: "05",
+      label: "Notifications",
+      icon: LuBell,
+      path: "/admin/notifications",
+    },
+    {
+      id: "06",
       label: "My Profile",
       icon: LuUser,
       path: "/admin/profile",
     },
     {
-      id: "06",
+      id: "07",
       label: "Logout",
       icon: LuLogOut,
       path: "logout",
@@ -66,6 +72,12 @@ import {
       label: "My Profile",
       icon: LuUser,
       path: "/user/profile",
+    },
+    {
+      id: "04",
+      label: "Notifications",
+      icon: LuBell,
+      path: "/user/notifications",
     },
     {
       id: "05",

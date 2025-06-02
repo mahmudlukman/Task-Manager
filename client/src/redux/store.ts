@@ -1,4 +1,3 @@
-'use client';
 import { configureStore } from '@reduxjs/toolkit';
 import { apiSlice } from './features/api/apiSlice';
 import authSlice from './features/auth/authSlice';
@@ -8,16 +7,31 @@ export const store = configureStore({
     [apiSlice.reducerPath]: apiSlice.reducer,
     auth: authSlice,
   },
-  devTools: false,
+  devTools: import.meta.env.NODE_ENV !== 'production', // Enable devTools in development
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware().concat(apiSlice.middleware),
 });
 
-// call the load user function on every page load
-
+// Initialize app and load user
 const initializeApp = async () => {
-  await store.dispatch(
-    apiSlice.endpoints.loadUser.initiate({}, { forceRefetch: true })
-  );
+  try {
+    const result = await store.dispatch(
+      apiSlice.endpoints.loadUser.initiate({}, { forceRefetch: true })
+    );
+    if (result.error) {
+      console.error('loadUser failed:', result.error);
+    } else {
+      console.log('loadUser succeeded, user:', result.data.user);
+    }
+  } catch (error) {
+    console.error('Error initializing app:', error);
+  }
 };
+
 initializeApp();
+
+// Export RootState and AppDispatch types
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
+
+export default store;

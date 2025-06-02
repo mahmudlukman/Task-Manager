@@ -284,7 +284,7 @@ const CreateTask = () => {
       setPendingFiles([]);
       console.log("taskData updated:", taskData);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskInfo]);
 
   const [openDeleteAlert, setOpenDeleteAlert] = useState(false);

@@ -5,23 +5,25 @@ import { IconType } from "react-icons";
 import { useSelector } from "react-redux";
 import { RootState } from "../../@types";
 import { useLogOutMutation } from "../../redux/features/auth/authApi";
+import { useGetUserNotificationsQuery } from "../../redux/features/notification/notificationApi";
 
 const SideMenu = ({ activeMenu }: { activeMenu: string }) => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [sideMenuData, setSideMenuData] = useState<
     { id: string; label: string; icon: IconType; path: string }[]
   >([]);
-
   const [logout, { isLoading: isLoggingOut }] = useLogOutMutation();
-
+  const { data: notificationsData } = useGetUserNotificationsQuery({}); // Fetch notifications
   const navigate = useNavigate();
+
+  // Calculate unread notifications count
+  const unreadCount = notificationsData?.pagination?.unreadCount || 0;
 
   const handleClick = (route: string) => {
     if (route === "logout") {
       handleLogout();
       return;
     }
-
     navigate(route);
   };
 
@@ -88,14 +90,21 @@ const SideMenu = ({ activeMenu }: { activeMenu: string }) => {
             activeMenu === item.label
               ? "text-primary bg-linear-to-r from-blue-50/40 to-blue-100/50 border-r-3"
               : ""
-          } py-3 px-6 mb-3 cursor-pointer`}
+          } py-3 px-6 mb-3 cursor-pointer relative`}
           onClick={() => handleClick(item.path)}
           disabled={item.path === "logout" && isLoggingOut}
         >
           <item.icon className="text-xl" />
-          {item.path === "logout" && isLoggingOut
-            ? "Logging out..."
-            : item.label}
+          <span>
+            {item.path === "logout" && isLoggingOut
+              ? "Logging out..."
+              : item.label}
+          </span>
+          {item.label === "Notifications" && unreadCount > 0 && (
+            <span className="absolute right-4 bg-red-500 text-white text-xs font-medium rounded-full w-5 h-5 flex items-center justify-center">
+              {unreadCount}
+            </span>
+          )}
         </button>
       ))}
     </div>

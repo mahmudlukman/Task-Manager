@@ -1,8 +1,9 @@
-import {
-  createBrowserRouter,
-  RouterProvider,
-  Navigate,
-} from "react-router-dom";
+import { useEffect } from "react";
+import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { useSelector } from "react-redux";
+import { RootState } from "./@types";
+import socketIO from "socket.io-client";
 import Dashboard from "./pages/Admin/Dashboard";
 import Login from "./pages/Auth/Login";
 import SignUp from "./pages/Auth/SignUp";
@@ -13,12 +14,12 @@ import UserDashboard from "./pages/User/UserDashboard";
 import UserProfile from "./pages/User/UserProfile";
 import MyTasks from "./pages/User/MyTasks";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails";
-import { Toaster } from "react-hot-toast";
+import Notifications from "./pages/User/Notifications";
 import PrivateRoute from "./routes/PrivateRoute";
-import { useSelector } from "react-redux";
-import { RootState } from "./@types";
 
-// Root component to handle redirection
+const ENDPOINT = import.meta.env.VITE_SOCKET_SERVER_URI || "";
+const socketId = socketIO(ENDPOINT, { transports: ["websocket"], autoConnect: true });
+
 const Root = () => {
   const { user } = useSelector((state: RootState) => state.auth);
 
@@ -33,7 +34,6 @@ const Root = () => {
   return <Navigate to="/user/dashboard" />;
 };
 
-// Create the router configuration
 const router = createBrowserRouter([
   {
     path: "/",
@@ -69,6 +69,10 @@ const router = createBrowserRouter([
         element: <ManageUsers />,
       },
       {
+        path: "notifications",
+        element: <Notifications />,
+      },
+      {
         path: "profile",
         element: <UserProfile />,
       },
@@ -95,11 +99,30 @@ const router = createBrowserRouter([
         path: "task-details/:id",
         element: <ViewTaskDetails />,
       },
+      {
+        path: "notifications",
+        element: <Notifications />,
+      },
     ],
   },
 ]);
 
 const App = () => {
+  useEffect(() => {
+    // Optional: Log connection status for debugging
+    socketId.on("connect", () => {
+      console.log("Connected to Socket.IO server");
+    });
+    socketId.on("disconnect", () => {
+      console.log("Disconnected from Socket.IO server");
+    });
+
+    return () => {
+      socketId.off("connect");
+      socketId.off("disconnect");
+    };
+  }, []);
+
   return (
     <>
       <RouterProvider router={router} />
@@ -116,3 +139,4 @@ const App = () => {
 };
 
 export default App;
+export { socketId }; // Export socketId for use in other components

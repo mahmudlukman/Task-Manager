@@ -15,6 +15,7 @@ export interface IUser extends Document {
     url: string;
   };
   role: string;
+  isActive?: boolean;
   comparePassword: (password: string) => Promise<boolean>;
   SignAccessToken: () => string;
 }
@@ -42,7 +43,11 @@ const UserSchema: Schema<IUser> = new mongoose.Schema(
       public_id: String,
       url: String,
     },
-    role: { type: String, enum: ["admin", "member"], default: "member" }, // Role-based access
+    role: { type: String, enum: ["admin", "member"], default: "member" },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   { timestamps: true }
 );

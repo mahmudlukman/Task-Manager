@@ -3,7 +3,6 @@ import { RouterProvider, createBrowserRouter, Navigate } from "react-router-dom"
 import { Toaster } from "react-hot-toast";
 import { useSelector } from "react-redux";
 import { RootState } from "./@types";
-import socketIO from "socket.io-client";
 import Dashboard from "./pages/Admin/Dashboard";
 import Login from "./pages/Auth/Login";
 import SignUp from "./pages/Auth/SignUp";
@@ -16,9 +15,7 @@ import MyTasks from "./pages/User/MyTasks";
 import ViewTaskDetails from "./pages/User/ViewTaskDetails";
 import Notifications from "./pages/User/Notifications";
 import PrivateRoute from "./routes/PrivateRoute";
-
-const ENDPOINT = import.meta.env.VITE_SOCKET_SERVER_URI || "";
-const socketId = socketIO(ENDPOINT, { transports: ["websocket"], autoConnect: true });
+import { socketId } from "./utils/helper";
 
 const Root = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -139,4 +136,3 @@ const App = () => {
 };
 
 export default App;
-export { socketId }; // Export socketId for use in other components

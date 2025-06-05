@@ -41,9 +41,9 @@ export const userApi = apiSlice.injectEndpoints({
         return []; // Don't invalidate anything if there's an error
       },
     }),
-    updateUserRole: builder.mutation({
+    updateUserStatus: builder.mutation({
       query: ({ data }) => ({
-        url: "update-user-role",
+        url: "update-user-status",
         method: "PUT",
         body: data,
         credentials: "include" as const,
@@ -75,6 +75,6 @@ export const {
   useGetUserQuery,
   useGetAllUsersQuery,
   useUpdateUserMutation,
-  useUpdateUserRoleMutation,
+  useUpdateUserStatusMutation,
   useDeleteUserMutation,
 } = userApi;

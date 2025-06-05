@@ -25,3 +25,9 @@ export const downloadBlob = (blob: Blob, filename: string) => {
   link.parentNode?.removeChild(link);
   window.URL.revokeObjectURL(url);
 };
+
+// socket.io client connection
+import socketIO from "socket.io-client";
+const ENDPOINT = import.meta.env.VITE_SOCKET_SERVER_URI || "";
+const socketId = socketIO(ENDPOINT, { transports: ["websocket"], autoConnect: true });
+export { socketId };

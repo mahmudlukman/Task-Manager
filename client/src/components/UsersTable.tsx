@@ -1,6 +1,6 @@
 import { User } from "../@types";
 import {
-  useUpdateUserRoleMutation,
+  useUpdateUserStatusMutation,
   useDeleteUserMutation,
 } from "../redux/features/user/userApi";
 import { toast } from "react-hot-toast";
@@ -9,26 +9,37 @@ import DeleteAlert from "./DeleteAlert";
 import { useState } from "react";
 
 const UsersTable = ({ usersData }: { usersData: User[] }) => {
-  const [updateUserRole, { isLoading: isUpdating }] =
-    useUpdateUserRoleMutation();
+  const [updateUserStatus, { isLoading: isUpdating }] =
+    useUpdateUserStatusMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
 
-  // Define available roles (adjust based on your app's roles)
-  const availableRoles = ["admin", "member"]; // Example roles
+  // Define available roles
+  const availableRoles = ["admin", "member"];
 
-  const handleRoleChange = async (userId: string, newRole: string) => {
+  // Handle role and status changes
+  const handleUserStatusChange = async (
+    userId: string,
+    newRole?: string,
+    isActive?: boolean
+  ) => {
     try {
-      await updateUserRole({ data: { id: userId, role: newRole } }).unwrap();
-      toast.success("User role updated successfully");
+      const updateData: { id: string; role?: string; isActive?: boolean } = {
+        id: userId,
+      };
+      if (newRole) updateData.role = newRole;
+      if (isActive !== undefined) updateData.isActive = isActive;
+
+      await updateUserStatus({ data: updateData }).unwrap();
+      toast.success(`User ${newRole ? "role" : "status"} updated successfully`);
     } catch (error) {
-      toast.error("Failed to update user role");
-      console.error("Role update error:", error);
+      toast.error(`Failed to update user ${newRole ? "role" : "status"}`);
+      console.error("User update error:", error);
     }
   };
 
   const handleDeleteClick = (userId: string) => {
-    setDeleteUserId(userId); // Show confirmation modal
+    setDeleteUserId(userId);
   };
 
   const handleConfirmDelete = async () => {
@@ -41,12 +52,12 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
       toast.error("Failed to delete user");
       console.error("Delete user error:", error);
     } finally {
-      setDeleteUserId(null); // Close modal
+      setDeleteUserId(null);
     }
   };
 
   const handleCancelDelete = () => {
-    setDeleteUserId(null); // Close modal
+    setDeleteUserId(null);
   };
 
   return (
@@ -64,20 +75,30 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
               Role
             </th>
             <th className="py-3 px-4 text-gray-800 font-medium text-[13px] hidden md:table-cell">
+              Status
+            </th>
+            <th className="py-3 px-4 text-gray-800 font-medium text-[13px] hidden md:table-cell">
               Action
             </th>
-            {/* <th className="py-3 px-4 text-gray-800 font-medium text-[13px] hidden md:table-cell">
-              Status
-            </th> */}
           </tr>
         </thead>
         <tbody>
           {usersData.map((user) => {
-            // Get initial or fallback
             const initial =
               user.name && user.name.trim()
                 ? user.name.charAt(0).toUpperCase()
                 : "U";
+            // Dynamic classes for role dropdown
+            const roleClass =
+              user.role === "admin"
+                ? "bg-green-100 text-green-800"
+                : "bg-blue-100 text-blue-800";
+
+            // Dynamic classes for status dropdown
+            const statusClass =
+              user.isActive ?? true
+                ? "bg-purple-100 text-purple-800"
+                : "bg-red-100 text-red-800";
             return (
               <tr key={user._id} className="border-t border-gray-200">
                 <td className="my-3 mx-4 text-gray-700 text-[13px] line-clamp-1 overflow-hidden">
@@ -101,9 +122,11 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                 <td className="py-4 px-4">
                   <select
                     value={user.role || "member"}
-                    onChange={(e) => handleRoleChange(user._id, e.target.value)}
+                    onChange={(e) =>
+                      handleUserStatusChange(user._id, e.target.value)
+                    }
                     disabled={isUpdating}
-                    className="px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className={`px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${roleClass} disabled:opacity-50`}
                   >
                     {availableRoles.map((role) => (
                       <option key={role} value={role}>
@@ -112,11 +135,23 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                     ))}
                   </select>
                 </td>
-                {/* <td className="py-4 px-4 hidden md:table-cell">
-                  <span className="px-2 py-1 text-xs rounded inline-block">
-                    {user.status || "N/A"}
-                  </span>
-                </td> */}
+                <td className="py-4 px-4 hidden md:table-cell">
+                  <select
+                    value={user.isActive ? "active" : "suspended"}
+                    onChange={(e) =>
+                      handleUserStatusChange(
+                        user._id,
+                        undefined,
+                        e.target.value === "active"
+                      )
+                    }
+                    disabled={isUpdating}
+                    className={`px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusClass} disabled:opacity-50`}
+                  >
+                    <option value="active">Active</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </td>
                 <td className="py-4 px-4">
                   <button
                     onClick={() => handleDeleteClick(user._id)}
@@ -132,16 +167,9 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
           })}
         </tbody>
       </table>
-      {/* Delete Confirmation Modal */}
       {deleteUserId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          {/* Semi-transparent overlay */}
-          <div
-            className="absolute inset-0"
-            onClick={handleCancelDelete} // Close when clicking outside
-          ></div>
-
-          {/* Modal container */}
+          <div className="absolute inset-0" onClick={handleCancelDelete}></div>
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4 z-10">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -154,8 +182,6 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                 ✕
               </button>
             </div>
-
-            {/* Using the updated DeleteAlert component */}
             <DeleteAlert
               content="Are you sure you want to delete this user? This action cannot be undone."
               onDelete={handleConfirmDelete}

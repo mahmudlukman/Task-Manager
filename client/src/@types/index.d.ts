@@ -10,6 +10,7 @@ export interface RootState {
         url: string;
       };
       role: string;
+      isActive: string;
     } | null;
   };
 }
@@ -34,6 +35,7 @@ interface User {
   email: string;
   avatar?: { public_id: string; url: string };
   role: string;
+  isActive: string;
 }
 
 interface Task {

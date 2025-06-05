@@ -71,10 +71,10 @@ const UserProfile = () => {
 
       // Call the update mutation
       const result = await updateUser({ data: updateData });
-      
-      // Check if the response has an error property 
+
+      // Check if the response has an error property
       // RTK Query sets this when the request fails
-      if ('error' in result) {
+      if ("error" in result) {
         toast.error("Failed to update profile");
         console.error("Update failed:", result.error);
       } else if (result.data?.success) {

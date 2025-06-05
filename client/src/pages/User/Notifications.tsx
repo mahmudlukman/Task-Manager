@@ -6,11 +6,11 @@ import {
   useMarkNotificationAsReadMutation,
   useDeleteNotificationMutation,
 } from "../../redux/features/notification/notificationApi";
-import { socketId } from "../../App";
 import { toast } from "react-hot-toast";
 import moment from "moment";
 import { LuTrash2, LuCheck } from "react-icons/lu";
 import DashboardLayout from "../../components/layouts/DashboardLayout";
+import { socketId } from "../../utils/helper";
 
 interface Notification {
   _id: string;

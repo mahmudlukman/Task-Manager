@@ -137,13 +137,13 @@ export const updateUser = catchAsyncError(
 );
 
 // @desc    Get user profile
-// @route   GET /api/v1/update-user-role
+// @route   GET /api/v1/update-user-status
 // @access  Private (Admin)
-export const updateUserRole = catchAsyncError(
+export const updateUserStatus = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { id, role } = req.body;
-      const user = await User.findByIdAndUpdate(id, { role }, { new: true });
+      const { id, role, isActive } = req.body;
+      const user = await User.findByIdAndUpdate(id, { role, isActive }, { new: true });
       res.status(201).json({
         success: true,
         user,

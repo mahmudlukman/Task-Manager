@@ -40,7 +40,7 @@ export const getUserById = catchAsyncError(
   }
 );
 
-// @desc    Get all users 
+// @desc    Get all users
 // @route   GET /api/v1/users
 // @access  Private (Admin only)
 export const getUsers = catchAsyncError(
@@ -143,10 +143,26 @@ export const updateUserStatus = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { id, role, isActive } = req.body;
-      const user = await User.findByIdAndUpdate(id, { role, isActive }, { new: true });
+      const user = await User.findById(id);
+
+      if (!user) {
+        return next(new ErrorHandler(`User not found: ${id}`, 404));
+      }
+
+      if (user.deletedAt) {
+        return next(
+          new ErrorHandler("Cannot update a user marked for deletion", 400)
+        );
+      }
+
+      const updatedUser = await User.findByIdAndUpdate(
+        id,
+        { role, isActive },
+        { new: true }
+      );
       res.status(201).json({
         success: true,
-        user,
+        user: updatedUser,
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
@@ -166,14 +182,79 @@ export const deleteUser = catchAsyncError(
         return next(new ErrorHandler("Missing user ID", 400));
       }
 
-      const user = await User.findByIdAndDelete(userId);
+      const user = await User.findById(userId);
 
       if (!user) {
         return next(new ErrorHandler(`User not found: ${userId}`, 404));
       }
+
+      // Prevent admin from soft-deleting themselves
+      if (req.user?._id.toString() === userId) {
+        return next(new ErrorHandler("Cannot delete your own account", 403));
+      }
+
+      // Mark user for deletion
+      user.isActive = false;
+      user.deletedAt = new Date();
+      await user.save();
+
       res.status(200).json({
         success: true,
-        message: "User deleted successfully",
+        message:
+          "User marked for deletion. Will be permanently deleted after 30 days.",
+      });
+    } catch (error: any) {
+      return next(new ErrorHandler(error.message, 400));
+    }
+  }
+);
+
+// @desc    Restore a soft-deleted user
+// @route   PATCH /api/v1/users/restore/:userId
+// @access  Private (Admin only)
+export const restoreUser = catchAsyncError(
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { userId } = req.params;
+
+      if (!userId) {
+        return next(new ErrorHandler("Missing user ID", 400));
+      }
+
+      const user = await User.findById(userId);
+
+      if (!user) {
+        return next(new ErrorHandler(`User not found: ${userId}`, 404));
+      }
+
+      if (!user.deletedAt) {
+        return next(new ErrorHandler("User is not marked for deletion", 400));
+      }
+
+      // Check if 30 days have not elapsed
+      const deletionDate = new Date(user.deletedAt);
+      const now = new Date();
+      const daysSinceDeletion =
+        (now.getTime() - deletionDate.getTime()) / (1000 * 60 * 60 * 24);
+
+      if (daysSinceDeletion > 30) {
+        return next(
+          new ErrorHandler(
+            "Cannot restore user: 30-day restoration period has expired",
+            400
+          )
+        );
+      }
+
+      // Restore user
+      user.isActive = true;
+      user.deletedAt = null;
+      await user.save();
+
+      res.status(200).json({
+        success: true,
+        message: "User restored successfully",
+        user,
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));

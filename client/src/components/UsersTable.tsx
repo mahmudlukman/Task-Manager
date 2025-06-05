@@ -1,10 +1,11 @@
-import { User } from "../@types";
+import { ApiError, User } from "../@types";
 import {
   useUpdateUserStatusMutation,
   useDeleteUserMutation,
+  useRestoreUserMutation,
 } from "../redux/features/user/userApi";
 import { toast } from "react-hot-toast";
-import { FaTrash } from "react-icons/fa";
+import { FaTrash, FaUndo } from "react-icons/fa";
 import DeleteAlert from "./DeleteAlert";
 import { useState } from "react";
 
@@ -12,6 +13,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
   const [updateUserStatus, { isLoading: isUpdating }] =
     useUpdateUserStatusMutation();
   const [deleteUser, { isLoading: isDeleting }] = useDeleteUserMutation();
+  const [restoreUser, { isLoading: isRestoring }] = useRestoreUserMutation();
   const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
 
   // Define available roles
@@ -47,12 +49,31 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
 
     try {
       await deleteUser(deleteUserId).unwrap();
-      toast.success("User deleted successfully");
-    } catch (error) {
-      toast.error("Failed to delete user");
+      toast.success("User marked for deletion");
+    } catch (error: unknown) {
+      // Extract backend error message if available
+      const errorMessage =
+        (error as ApiError)?.data?.message ||
+        (error as ApiError)?.error ||
+        "Failed to mark user for deletion";
+      toast.error(errorMessage);
       console.error("Delete user error:", error);
     } finally {
       setDeleteUserId(null);
+    }
+  };
+
+  const handleRestoreClick = async (userId: string) => {
+    try {
+      const result = await restoreUser(userId).unwrap();
+      if (result.success) {
+        toast.success("User restored successfully");
+      } else {
+        toast.error("Failed to restore user");
+      }
+    } catch (error) {
+      toast.error("Failed to restore user");
+      console.error("Restore user error:", error);
     }
   };
 
@@ -91,7 +112,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
             // Dynamic classes for role dropdown
             const roleClass =
               user.role === "admin"
-                ? "bg-green-100 text-green-800"
+                ? "bg-green-100 text-green-800 cursor-not-allowed"
                 : "bg-blue-100 text-blue-800";
 
             // Dynamic classes for status dropdown
@@ -125,7 +146,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                     onChange={(e) =>
                       handleUserStatusChange(user._id, e.target.value)
                     }
-                    disabled={isUpdating}
+                    disabled={isUpdating || !!user.deletedAt}
                     className={`px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${roleClass} disabled:opacity-50`}
                   >
                     {availableRoles.map((role) => (
@@ -136,31 +157,48 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                   </select>
                 </td>
                 <td className="py-4 px-4 hidden md:table-cell">
-                  <select
-                    value={user.isActive ? "active" : "suspended"}
-                    onChange={(e) =>
-                      handleUserStatusChange(
-                        user._id,
-                        undefined,
-                        e.target.value === "active"
-                      )
-                    }
-                    disabled={isUpdating}
-                    className={`px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusClass} disabled:opacity-50`}
-                  >
-                    <option value="active">Active</option>
-                    <option value="suspended">Suspended</option>
-                  </select>
+                  {user.deletedAt ? (
+                    <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800">
+                      Pending Deletion
+                    </span>
+                  ) : (
+                    <select
+                      value={user.isActive ?? true ? "active" : "suspended"}
+                      onChange={(e) =>
+                        handleUserStatusChange(
+                          user._id,
+                          undefined,
+                          e.target.value === "active"
+                        )
+                      }
+                      disabled={isUpdating}
+                      className={`px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusClass} disabled:opacity-50`}
+                    >
+                      <option value="active">Active</option>
+                      <option value="suspended">Suspended</option>
+                    </select>
+                  )}
                 </td>
                 <td className="py-4 px-4">
-                  <button
-                    onClick={() => handleDeleteClick(user._id)}
-                    disabled={isDeleting}
-                    className="text-rose-500 hover:text-rose-700"
-                    title="Delete user"
-                  >
-                    <FaTrash className="w-4 h-4" />
-                  </button>
+                  {user.deletedAt ? (
+                    <button
+                      onClick={() => handleRestoreClick(user._id)}
+                      disabled={isRestoring}
+                      className="text-blue-500 hover:text-blue-700"
+                      title="Restore user"
+                    >
+                      <FaUndo className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleDeleteClick(user._id)}
+                      disabled={isDeleting}
+                      className="text-rose-500 hover:text-rose-700"
+                      title="Delete user"
+                    >
+                      <FaTrash className="w-4 h-4" />
+                    </button>
+                  )}
                 </td>
               </tr>
             );
@@ -183,7 +221,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
               </button>
             </div>
             <DeleteAlert
-              content="Are you sure you want to delete this user? This action cannot be undone."
+              content="Are you sure you want to delete this user? This user will be marked for deletion and permanently deleted after 30 days."
               onDelete={handleConfirmDelete}
             />
           </div>

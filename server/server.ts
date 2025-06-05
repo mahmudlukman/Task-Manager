@@ -2,9 +2,15 @@ import { app } from "./app";
 import { initSocketServer } from "./socketServer";
 import { v2 as cloudinary } from "cloudinary";
 import connectDB from "./utils/db";
+import { scheduleNotificationsCleanup, scheduleUserCleanup } from "./utils/cronJobs";
 import http from "http";
 import dotenv from "dotenv";
 dotenv.config();
+
+
+// Start cron jobs
+scheduleNotificationsCleanup();
+scheduleUserCleanup();
 
 const server = http.createServer(app);
 

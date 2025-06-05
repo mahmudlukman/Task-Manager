@@ -93,17 +93,3 @@ export const deleteNotification = catchAsyncError(
   }
 );
 
-// Cleanup old read notifications (runs daily at midnight)
-cron.schedule("0 0 0 * * *", async () => {
-  try {
-    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const result = await Notification.deleteMany({
-      status: "read",
-      createdAt: { $lt: thirtyDaysAgo },
-    });
-
-    console.log(`Deleted ${result.deletedCount} old read notifications`);
-  } catch (error) {
-    console.error("Error during notification cleanup:", error);
-  }
-});

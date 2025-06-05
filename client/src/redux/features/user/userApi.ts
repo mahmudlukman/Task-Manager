@@ -68,6 +68,19 @@ export const userApi = apiSlice.injectEndpoints({
         ];
       },
     }),
+    restoreUser: builder.mutation({
+      query: (id) => ({
+        url: `restore/${id}`,
+        method: "PUT",
+        credentials: "include" as const,
+      }),
+      invalidatesTags: (result, error, id) => {
+        return [
+          { type: "User", id },
+          { type: "User", id: "LIST" },
+        ];
+      },
+    }),
   }),
 });
 
@@ -77,4 +90,5 @@ export const {
   useUpdateUserMutation,
   useUpdateUserStatusMutation,
   useDeleteUserMutation,
+  useRestoreUserMutation,
 } = userApi;

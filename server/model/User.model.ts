@@ -16,6 +16,7 @@ export interface IUser extends Document {
   };
   role: string;
   isActive?: boolean;
+  deletedAt?: Date | null;
   comparePassword: (password: string) => Promise<boolean>;
   SignAccessToken: () => string;
 }
@@ -47,6 +48,10 @@ const UserSchema: Schema<IUser> = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
+    },
+    deletedAt: {
+      type: Date,
+      default: null, // Null means not deleted
     },
   },
   { timestamps: true }

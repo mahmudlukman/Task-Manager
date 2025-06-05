@@ -36,6 +36,17 @@ interface User {
   avatar?: { public_id: string; url: string };
   role: string;
   isActive: string;
+  deletedAt?: Date | null;
+}
+
+// src/@types/index.ts (or inline in UsersTable.tsx)
+interface ApiError {
+  status: number | string;
+  data?: {
+    message: string;
+    statusCode?: number;
+  };
+  error?: string;
 }
 
 interface Task {

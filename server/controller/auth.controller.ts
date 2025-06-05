@@ -90,9 +90,14 @@ export const loginUser = catchAsyncError(
         return next(new ErrorHandler("Invalid credentials", 400));
       }
 
-      const { isActive } = user;
-      if (!isActive) {
-        return next(new ErrorHandler("This account has been suspended! Try to contact the admin", 403));
+      const { isActive, deletedAt } = user;
+      if (!isActive || deletedAt) {
+        return next(
+          new ErrorHandler(
+            "This account has been suspended or marked for deletion! Try to contact the admin",
+            403
+          )
+        );
       }
 
       sendToken(user, 200, res);

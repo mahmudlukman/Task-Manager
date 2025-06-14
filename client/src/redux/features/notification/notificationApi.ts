@@ -4,7 +4,6 @@ export const notificationApi = apiSlice.injectEndpoints({
   endpoints: (builder) => ({
     getUserNotifications: builder.query({
       query: () => {
-        console.log("Triggering getUserNotifications query");
         return {
           url: "get-user-notifications",
           method: "GET",

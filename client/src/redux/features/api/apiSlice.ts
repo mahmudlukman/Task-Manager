@@ -12,7 +12,7 @@ export const apiSlice = createApi({
   endpoints: (builder) => ({
     loadUser: builder.query({
       query: () => {
-        console.log("Triggering loadUser query"); // Debug log
+        // This query fetches the logged-in user's profile
         return {
           url: "me",
           method: "GET",
@@ -22,7 +22,7 @@ export const apiSlice = createApi({
       async onQueryStarted(arg, { queryFulfilled, dispatch }) {
         try {
           const result = await queryFulfilled;
-          console.log("loadUser result:", result.data); // Debug log
+          // If the query is successful, dispatch the userLoggedIn action
           dispatch(
             userLoggedIn({
               accessToken: result.data.accessToken,

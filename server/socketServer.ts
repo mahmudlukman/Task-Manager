@@ -3,7 +3,6 @@ import http from "http";
 import { setSocketServer } from "./controller/task.controller";
 
 export const initSocketServer = (server: http.Server) => {
-  console.log("Initializing Socket.IO server");
   const io = new SocketIOServer(server, {
     cors: {
       origin: process.env.CLIENT_URL || "*",

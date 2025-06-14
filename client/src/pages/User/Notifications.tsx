@@ -146,7 +146,7 @@ const Notifications = () => {
               <div className="flex gap-2">
                 {notification.status === "unread" && (
                   <button
-                    className="text-blue-500 hover:text-blue-700"
+                    className="text-blue-500 hover:text-blue-700 cursor-pointer"
                     onClick={() => handleMarkAsRead(notification._id)}
                     disabled={isMarking}
                     title="Mark as read"
@@ -155,7 +155,7 @@ const Notifications = () => {
                   </button>
                 )}
                 <button
-                  className="text-red-500 hover:text-red-700"
+                  className="text-red-500 hover:text-red-700 cursor-pointer"
                   onClick={() => handleDelete(notification._id)}
                   disabled={isDeleting}
                   title="Delete"

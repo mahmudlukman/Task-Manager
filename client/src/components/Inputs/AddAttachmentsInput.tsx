@@ -31,7 +31,6 @@ const AddAttachmentsInput = ({
     }
 
     const newFiles = Array.from(files);
-    console.log("Selected files:", newFiles);
 
     const newAttachments: Attachment[] = newFiles.map((file, index) => ({
       public_id: `temp_${Date.now()}_${index}`,

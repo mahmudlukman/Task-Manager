@@ -246,8 +246,6 @@ const CreateTask = () => {
   };
   useEffect(() => {
     if (taskInfo) {
-      console.log("taskInfo:", taskInfo);
-      console.log("taskInfo.attachments:", taskInfo.attachments);
       setTaskData({
         title: taskInfo.title ?? "",
         description: taskInfo.description ?? "",
@@ -282,7 +280,6 @@ const CreateTask = () => {
           : [],
       });
       setPendingFiles([]);
-      console.log("taskData updated:", taskData);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [taskInfo]);

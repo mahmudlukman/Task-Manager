@@ -3,9 +3,10 @@ import User from "../model/User.model";
 import ErrorHandler from "../utils/errorHandler";
 import { catchAsyncError } from "../middleware/catchAsyncError";
 import { NextFunction, Request, Response } from "express";
-import { UpdateUserParams } from "../@types";
+import { IGetAllUsers, UpdateUserParams } from "../@types";
 import cloudinary from "cloudinary";
 import Task from "../model/Task.model";
+import { FilterQuery } from "mongoose";
 
 // @desc    Get logged in user profile
 // @route   GET /api/v1/me
@@ -46,8 +47,30 @@ export const getUserById = catchAsyncError(
 export const getUsers = catchAsyncError(
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      const {
+        page = 1,
+        pageSize = 20,
+        filter,
+        searchQuery,
+      } = req.query as IGetAllUsers;
+
+      const skipAmount = (page - 1) * pageSize;
+
+      const query: FilterQuery<typeof User> = {};
+
+      if (searchQuery) {
+        const escapedSearchQuery = searchQuery.replace(
+          /[.*+?^${}()|[\]\\]/g,
+          "\\$&"
+        );
+        query.$or = [{ name: { $regex: new RegExp(escapedSearchQuery, "i") } }];
+      }
+
       // Fetch all users, excluding password
-      const users = await User.find().select("-password");
+      const users = await User.find(query)
+        .skip(skipAmount)
+        .limit(pageSize)
+        .select("-password");
 
       // Add task counts to each user and filter those with tasks
       const usersWithTaskCounts = await Promise.all(
@@ -83,10 +106,14 @@ export const getUsers = catchAsyncError(
         (user) => user !== null
       );
 
+      const totalUsers = await User.countDocuments(query);
+      const isNext = totalUsers > skipAmount + users.length;
+
       res.status(200).json({
         success: true,
         users, // All users
         usersWithTaskCounts: filteredUsersWithTaskCounts, // Only users with tasks
+        isNext,
       });
     } catch (error: any) {
       return next(new ErrorHandler(error.message, 400));
@@ -94,7 +121,7 @@ export const getUsers = catchAsyncError(
   }
 );
 
-// @desc    Get user profile
+// @desc    Update user profile
 // @route   GET /api/v1/update-user/
 // @access  Private
 export const updateUser = catchAsyncError(
@@ -136,7 +163,7 @@ export const updateUser = catchAsyncError(
   }
 );
 
-// @desc    Get user profile
+// @desc    Update user status and role
 // @route   GET /api/v1/update-user-status
 // @access  Private (Admin)
 export const updateUserStatus = catchAsyncError(

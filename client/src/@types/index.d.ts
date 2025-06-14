@@ -160,3 +160,12 @@ interface StatusTab {
   label: string;
   count: number;
 }
+
+interface SearchParamsProps {
+  searchParams: { [key: string]: string | undefined };
+}
+
+interface URLProps {
+  params: { id: string };
+  searchParams: { [key: string]: string | undefined };
+}

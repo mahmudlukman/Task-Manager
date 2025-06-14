@@ -18,6 +18,13 @@ export type GetUsersParams = {
   pageSize?: number;
   sortBy?: SortOrder;
 };
+
+interface IGetAllUsers {
+  page?: number;
+  pageSize?: number;
+  filter?: string;
+  searchQuery?: string;
+}
 export type GetSavedThreadParams = {
   page?: number;
   pageSize?: number;

@@ -12,9 +12,14 @@ export const userApi = apiSlice.injectEndpoints({
       providesTags: (arg) => [{ type: "User", id: arg.userId }],
     }),
     getAllUsers: builder.query({
-      query: () => ({
+      query: (params) => ({
         url: "users",
         method: "GET",
+        params: {
+          searchQuery: params.searchQuery,
+          page: params.page,
+          pageSize: params.pageSize,
+        },
         credentials: "include" as const,
       }),
       providesTags: (result) => [

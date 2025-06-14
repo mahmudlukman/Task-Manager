@@ -85,8 +85,8 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
     <div className="overflow-x-auto p-0 rounded-lg mt-3">
       <table className="min-w-full">
         <thead>
-          <tr className="text-left">
-            <th className="py-3 px-4 text-gray-800 font-medium text-[13px]">
+          <tr className="text-left bg-gray-100">
+            <th className="py-3 px-4 text-gray-800 font-medium text-[13px] hidden md:table-cell">
               Avatar
             </th>
             <th className="py-3 px-4 text-gray-800 font-medium text-[13px]">
@@ -95,10 +95,10 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
             <th className="py-3 px-4 text-gray-800 font-medium text-[13px]">
               Role
             </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[13px] hidden md:table-cell">
+            <th className="py-3 px-4 text-gray-800 font-medium text-[13px]">
               Status
             </th>
-            <th className="py-3 px-4 text-gray-800 font-medium text-[13px] hidden md:table-cell">
+            <th className="py-3 px-4 text-gray-800 font-medium text-[13px]">
               Action
             </th>
           </tr>
@@ -122,7 +122,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                 : "bg-red-100 text-red-800";
             return (
               <tr key={user._id} className="border-t border-gray-200">
-                <td className="my-3 mx-4 text-gray-700 text-[13px] line-clamp-1 overflow-hidden">
+                <td className="my-3 mx-4 text-gray-700 text-[13px] line-clamp-1 overflow-hidden hidden md:table-cell">
                   {user?.avatar?.url ? (
                     <img
                       src={user.avatar.url}
@@ -147,7 +147,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                       handleUserStatusChange(user._id, e.target.value)
                     }
                     disabled={isUpdating || !!user.deletedAt}
-                    className={`px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${roleClass} disabled:opacity-50`}
+                    className={`px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-full md:w-auto ${roleClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                   >
                     {availableRoles.map((role) => (
                       <option key={role} value={role}>
@@ -156,7 +156,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                     ))}
                   </select>
                 </td>
-                <td className="py-4 px-4 hidden md:table-cell">
+                <td className="py-4 px-4">
                   {user.deletedAt ? (
                     <span className="px-2 py-1 text-xs rounded bg-gray-100 text-gray-800">
                       Pending Deletion
@@ -172,7 +172,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                         )
                       }
                       disabled={isUpdating}
-                      className={`px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 ${statusClass} disabled:opacity-50`}
+                      className={`px-2 py-1 text-xs rounded border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer w-full md:w-auto ${statusClass} disabled:opacity-50 disabled:cursor-not-allowed`}
                     >
                       <option value="active">Active</option>
                       <option value="suspended">Suspended</option>
@@ -184,7 +184,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                     <button
                       onClick={() => handleRestoreClick(user._id)}
                       disabled={isRestoring}
-                      className="text-blue-500 hover:text-blue-700"
+                      className="text-blue-500 hover:text-blue-700 cursor-pointer disabled:cursor-not-allowed"
                       title="Restore user"
                     >
                       <FaUndo className="w-4 h-4" />
@@ -193,7 +193,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
                     <button
                       onClick={() => handleDeleteClick(user._id)}
                       disabled={isDeleting}
-                      className="text-rose-500 hover:text-rose-700"
+                      className="text-rose-500 hover:text-rose-700 cursor-pointer disabled:cursor-not-allowed"
                       title="Delete user"
                     >
                       <FaTrash className="w-4 h-4" />
@@ -207,7 +207,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
       </table>
       {deleteUserId && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0" onClick={handleCancelDelete}></div>
+          <div className="absolute inset-0 cursor-pointer" onClick={handleCancelDelete}></div>
           <div className="bg-white rounded-lg shadow-xl p-6 max-w-sm w-full mx-4 z-10">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
@@ -215,7 +215,7 @@ const UsersTable = ({ usersData }: { usersData: User[] }) => {
               </h3>
               <button
                 onClick={handleCancelDelete}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 ✕
               </button>

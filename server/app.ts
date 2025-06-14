@@ -2,6 +2,8 @@ import express, { NextFunction, Request, Response } from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import { ErrorMiddleware } from "./middleware/error";
+import compression from "compression";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import swaggerUi from "swagger-ui-express";
 const swaggerDocument = require("./swagger-output.json");
@@ -10,6 +12,7 @@ import authRouter from "./routes/auth.route";
 import taskRouter from "./routes/task.route";
 import reportRouter from "./routes/report.route";
 import notificationRouter from "./routes/notification.route";
+import limiter from "./utils/rateLimiter";
 
 export const app = express();
 //config
@@ -31,6 +34,19 @@ app.use(
     credentials: true,
   })
 );
+
+// Enable response compression to reduce payload size and improve performance
+app.use(
+  compression({
+    threshold: 1024, // Only compress responses larger than 1KB
+  })
+);
+
+// Use Helmet to enhance security by setting various HTTP headers
+app.use(helmet());
+
+// Apply rate limiting middleware to prevent excessive requests and enhance security
+app.use(limiter);
 
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 app.use("/docs.json", (req, res) => {
